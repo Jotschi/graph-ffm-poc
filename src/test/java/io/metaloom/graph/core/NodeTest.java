@@ -14,6 +14,8 @@ import java.nio.file.Files;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import io.metaloom.graph.core.storage.impl.MemoryStorageImpl;
+
 // Ensure map count is large enough
 //sysctl -w vm.max_map_count=131072
 
@@ -30,11 +32,11 @@ public class NodeTest {
 
 	@Test
 	public void testNode() throws Exception {
-		try (MemoryStorage st = new MemoryStorage(nodesFile, relsFile)) {
+		try (MemoryStorageImpl st = new MemoryStorageImpl(nodesFile, relsFile)) {
 			measure(() -> {
 				for (int i = 0; i < 4; i++) {
 					System.out.println("Storing: " + i);
-					System.out.println("Addr: " + st.storeNode(i, 42));
+					st.node().store(i, 42);
 				}
 				return null;
 			});
@@ -43,26 +45,26 @@ public class NodeTest {
 
 	@Test
 	public void testRelationship() throws Exception {
-		try (MemoryStorage st = new MemoryStorage(nodesFile, relsFile)) {
+		try (MemoryStorageImpl st = new MemoryStorageImpl(nodesFile, relsFile)) {
 			measure(() -> {
 				for (int i = 0; i < 4; i++) {
 					System.out.println("Storing: " + i);
-					System.out.println("Addr: " + st.storeRelationship(i, i + 20, i + 10, "Hello World"));
+					st.rel().store(i, i + 20, i + 10, "Hello World");
 				}
 				return null;
 			});
 
 			for (int i = 0; i < 4; i++) {
-				long[] rels = st.loadRelationship(i);
+				long[] rels = st.rel().load(i);
 				System.out.println("REL: " + i + "=>" + rels[0] + "," + rels[1]);
 			}
 
-			st.loadRelationship(2);
-			st.deleteRelationship(2);
-			st.loadRelationship(2);
+			st.rel().load(2);
+			st.rel().delete(2);
+			st.rel().load(2);
 		}
-		try (MemoryStorage st = new MemoryStorage(nodesFile, relsFile)) {
-			for (Long id : st.getFreeRelIds()) {
+		try (MemoryStorageImpl st = new MemoryStorageImpl(nodesFile, relsFile)) {
+			for (Long id : st.rel().getFreeIds()) {
 				System.out.println("Free Id: " + id);
 			}
 		}
