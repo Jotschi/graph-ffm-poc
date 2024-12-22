@@ -47,14 +47,23 @@ public class NodeTest {
 			measure(() -> {
 				for (int i = 0; i < 4; i++) {
 					System.out.println("Storing: " + i);
-					System.out.println("Addr: " + st.storeRelationship(i, i+20, i+10));
+					System.out.println("Addr: " + st.storeRelationship(i, i + 20, i + 10, "Hello World"));
 				}
 				return null;
 			});
-			
-			for(int i = 0; i<4 ; i++) {
+
+			for (int i = 0; i < 4; i++) {
 				long[] rels = st.loadRelationship(i);
 				System.out.println("REL: " + i + "=>" + rels[0] + "," + rels[1]);
+			}
+
+			st.loadRelationship(2);
+			st.deleteRelationship(2);
+			st.loadRelationship(2);
+		}
+		try (MemoryStorage st = new MemoryStorage(nodesFile, relsFile)) {
+			for (Long id : st.getFreeRelIds()) {
+				System.out.println("Free Id: " + id);
 			}
 		}
 	}
