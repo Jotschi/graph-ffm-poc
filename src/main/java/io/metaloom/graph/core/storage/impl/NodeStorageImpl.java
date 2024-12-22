@@ -7,8 +7,6 @@ import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
-import java.lang.invoke.VarHandle;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 
@@ -28,8 +26,7 @@ public class NodeStorageImpl extends AbstractMemoryMappedFileStorage implements 
 	}
 
 	@Override
-	public void store(long id, long y) throws IOException {
-		System.out.println(NODE_LAYOUT.byteSize());
+	public void store(long id, String label) throws IOException {
 		// Calculate the offset
 		long offset = id * NODE_LAYOUT.byteSize();
 
@@ -37,19 +34,13 @@ public class NodeStorageImpl extends AbstractMemoryMappedFileStorage implements 
 		FileChannel fc = raFile.getChannel();
 
 		// Ensure the file is large enough
-		if (raFile.length() < offset + NODE_LAYOUT.byteSize()) {
-			// Write zeros to extend the file
-			byte[] zeros = new byte[(int) (offset + NODE_LAYOUT.byteSize() - raFile.length())];
-			fc.position(raFile.length());
-			fc.write(ByteBuffer.wrap(zeros));
-		}
-
-		System.out.println("Using offset: " + offset);
-		MemorySegment memorySegment = fc.map(MapMode.READ_WRITE, offset, NODE_LAYOUT.byteSize(), arena);
+		ensureFileCapacity(fc, offset);
 
 		// Set the values
-		VarHandle idHandle = NODE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("nodeId"));
-		idHandle.set(memorySegment, 0, (long) id);
+		MemorySegment memorySegment = fc.map(MapMode.READ_WRITE, offset, NODE_LAYOUT.byteSize(), arena);
+		NODE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("nodeId")).set(memorySegment, 0, (long) id);
+		NODE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("free")).set(memorySegment, 0, false);
+		writeLabel(memorySegment, label);
 	}
 
 }

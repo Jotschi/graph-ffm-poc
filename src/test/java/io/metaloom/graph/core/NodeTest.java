@@ -4,11 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
-import java.lang.invoke.VarHandle;
 import java.nio.file.Files;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +31,7 @@ public class NodeTest {
 			measure(() -> {
 				for (int i = 0; i < 4; i++) {
 					System.out.println("Storing: " + i);
-					st.node().store(i, 42);
+					st.node().store(i, "Person");
 				}
 				return null;
 			});
@@ -49,7 +44,7 @@ public class NodeTest {
 			measure(() -> {
 				for (int i = 0; i < 4; i++) {
 					System.out.println("Storing: " + i);
-					st.rel().store(i, i + 20, i + 10, "Hello World");
+					st.rel().store(st.rel().id(), i + 20, i + 10, "Hello World");
 				}
 				return null;
 			});
@@ -61,13 +56,21 @@ public class NodeTest {
 
 			st.rel().load(2);
 			st.rel().delete(2);
+			st.rel().delete(4);
 			st.rel().load(2);
+			assertEquals(2, st.rel().getFreeIds().size(), "There should be two free ids");
+			st.rel().store(st.rel().id(), 20, 10, "Hello World1");
+			st.rel().store(st.rel().id(), 20, 10, "Hello World2");
+			assertEquals(0, st.rel().getFreeIds().size(), "There should be no free ids");
+			st.rel().store(st.rel().id(), 20, 10, "Hello World3");
+			assertEquals(0, st.rel().getFreeIds().size(), "There should be no free ids");
 		}
 		try (MemoryStorageImpl st = new MemoryStorageImpl(nodesFile, relsFile)) {
 			for (Long id : st.rel().getFreeIds()) {
 				System.out.println("Free Id: " + id);
 			}
 		}
+
 	}
 
 	private <T> T measure(TimeableAction<T> action) throws Exception {
@@ -77,18 +80,4 @@ public class NodeTest {
 		return ret;
 	}
 
-	@Test
-	public void testFMA() {
-		long value = 10;
-		MemoryLayout pointLayout = MemoryLayout.structLayout(
-			ValueLayout.JAVA_LONG.withName("id"),
-			ValueLayout.JAVA_INT.withName("y"));
-		VarHandle xHandle = pointLayout.varHandle(MemoryLayout.PathElement.groupElement("id"));
-		Arena arena = Arena.ofAuto();
-		MemorySegment segment = arena.allocate(pointLayout);
-		xHandle.set(segment, 0, (long) value);
-		long xValue = (long) xHandle.get(segment, 0);
-
-		assertEquals(xValue, value);
-	}
 }

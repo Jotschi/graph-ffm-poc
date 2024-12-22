@@ -8,13 +8,15 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.VarHandle;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.concurrent.atomic.AtomicLong;
 
-public class AbstractMemoryMappedFileStorage implements AutoCloseable {
+public class AbstractMemoryMappedFileStorage implements Storage {
 
 	protected Arena arena;
 
@@ -24,9 +26,11 @@ public class AbstractMemoryMappedFileStorage implements AutoCloseable {
 
 	protected final MemoryLayout layout;
 
-	protected final Set<Long> freeIds = new HashSet<>();
+	protected final Deque<Long> freeIds = new ArrayDeque<>();
 
 	protected final VarHandle labelHandle;
+
+	protected final AtomicLong idProvider;
 
 	public AbstractMemoryMappedFileStorage(File file, MemoryLayout layout) throws FileNotFoundException {
 		this.arena = Arena.ofShared();
@@ -39,7 +43,8 @@ public class AbstractMemoryMappedFileStorage implements AutoCloseable {
 			MemoryLayout.PathElement.sequenceElement());
 
 		try {
-			loadFreeIds(freeIds, this.raFile, layout);
+			long lastId = loadFreeIds(layout);
+			this.idProvider = new AtomicLong(lastId++);
 		} catch (Exception e) {
 			throw new RuntimeException("Error while loading free ids", e);
 		}
@@ -84,22 +89,59 @@ public class AbstractMemoryMappedFileStorage implements AutoCloseable {
 		System.out.println("Retrieved Label: " + retrievedLabel);
 	}
 
-	private void loadFreeIds(Set<Long> ids, RandomAccessFile file, MemoryLayout layout) throws IOException {
-		if (file.length() == 0) {
+	@Override
+	public void delete(long relId) throws IOException {
+		// Calculate the offset
+		long offset = relId * layout.byteSize();
+		if (offset > raFile.length()) {
 			return;
 		}
-		FileChannel fc = file.getChannel();
+
+		// Map the memory segment
+		FileChannel fc = raFile.getChannel();
+		MemorySegment memorySegment = fc.map(MapMode.READ_WRITE, offset, layout.byteSize(), arena);
+		layout.varHandle(MemoryLayout.PathElement.groupElement("free")).set(memorySegment, 0, true);
+		freeIds.add(relId);
+	}
+
+	private long loadFreeIds(MemoryLayout layout) throws IOException {
+		if (raFile.length() == 0) {
+			return 0L;
+		}
+		FileChannel fc = raFile.getChannel();
+		long lastId = 0L;
 		for (long offset = 0; offset < file.length(); offset += layout.byteSize()) {
 			MemorySegment memorySegment = fc.map(MapMode.READ_ONLY, offset, layout.byteSize(), arena);
 			boolean free = (boolean) layout.varHandle(MemoryLayout.PathElement.groupElement("free")).get(memorySegment, 0);
-			long id = offset / layout.byteSize();
+			lastId = offset / layout.byteSize();
 			if (free) {
-				ids.add(id);
+				freeIds.add(lastId);
 			}
+		}
+		return lastId;
+	}
+
+	protected void ensureFileCapacity(FileChannel fc, long offset) throws IOException {
+		if (raFile.length() < offset + layout.byteSize()) {
+			// Write zeros to extend the file
+			byte[] zeros = new byte[(int) (offset + layout.byteSize() - raFile.length())];
+			fc.position(raFile.length());
+			fc.write(ByteBuffer.wrap(zeros));
+			// System.out.println("Adding: " + zeros.length + " bytes to the file");
 		}
 	}
 
-	public Set<Long> getFreeIds() {
+	@Override
+	public long id() {
+		if (freeIds.isEmpty()) {
+			return idProvider.incrementAndGet();
+		} else {
+			return freeIds.pop();
+		}
+	}
+
+	@Override
+	public Deque<Long> getFreeIds() {
 		return freeIds;
 	}
 

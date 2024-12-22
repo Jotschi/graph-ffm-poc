@@ -7,10 +7,8 @@ import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
-import java.util.Set;
 
 import io.metaloom.graph.core.storage.AbstractMemoryMappedFileStorage;
 import io.metaloom.graph.core.storage.RelationshipStorage;
@@ -29,24 +27,9 @@ public class RelationshipStorageImpl extends AbstractMemoryMappedFileStorage imp
 		super(file, REL_LAYOUT);
 	}
 
+
+
 	@Override
-	public void delete(long relId) throws IOException {
-		// Calculate the offset
-		long offset = relId * REL_LAYOUT.byteSize();
-		if (offset > raFile.length()) {
-			return;
-		}
-
-		// Map the memory segment
-		FileChannel fc = raFile.getChannel();
-		MemorySegment memorySegment = fc.map(MapMode.READ_WRITE, offset, REL_LAYOUT.byteSize(), arena);
-		REL_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("free")).set(memorySegment, 0, true);
-	}
-
-	public Set<Long> getFreeNodeIds() {
-		return freeIds;
-	}
-
 	public long[] load(long relId) throws IOException {
 		// Calculate the offset
 		long offset = relId * REL_LAYOUT.byteSize();
@@ -65,7 +48,6 @@ public class RelationshipStorageImpl extends AbstractMemoryMappedFileStorage imp
 		long nodeAId = (long) REL_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("nodeAId")).get(memorySegment, 0);
 		long nodeBId = (long) REL_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("nodeBId")).get(memorySegment, 0);
 		boolean free = (boolean) REL_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("free")).get(memorySegment, 0);
-
 		readLabel(memorySegment);
 
 		System.out.println("Free: " + free);
@@ -81,23 +63,14 @@ public class RelationshipStorageImpl extends AbstractMemoryMappedFileStorage imp
 		FileChannel fc = raFile.getChannel();
 
 		// Ensure the file is large enough
-		if (raFile.length() < offset + REL_LAYOUT.byteSize()) {
-			// Write zeros to extend the file
-			byte[] zeros = new byte[(int) (offset + REL_LAYOUT.byteSize() - raFile.length())];
-			fc.position(raFile.length());
-			fc.write(ByteBuffer.wrap(zeros));
-			// System.out.println("Adding: " + zeros.length + " bytes to the file");
-		}
-
-		System.out.println("Using offset: " + offset);
-		MemorySegment memorySegment = fc.map(MapMode.READ_WRITE, offset, REL_LAYOUT.byteSize(), arena);
+		ensureFileCapacity(fc, offset);
 
 		// Set the values
+		MemorySegment memorySegment = fc.map(MapMode.READ_WRITE, offset, REL_LAYOUT.byteSize(), arena);
 		REL_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("relId")).set(memorySegment, 0, (long) relId);
 		REL_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("nodeAId")).set(memorySegment, 0, (long) nodeAId);
 		REL_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("nodeBId")).set(memorySegment, 0, (long) nodeBId);
 		REL_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("free")).set(memorySegment, 0, false);
-
 		writeLabel(memorySegment, label);
 	}
 
