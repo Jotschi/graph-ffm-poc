@@ -2,32 +2,34 @@ package io.metaloom.graph.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.metaloom.graph.core.storage.impl.MemoryStorageImpl;
+import io.metaloom.graph.core.storage.impl.GraphStorageImpl;
 
 // Ensure map count is large enough
 //sysctl -w vm.max_map_count=131072
 
-public class NodeTest {
+public class GraphStorageTest {
 
-	File relsFile = new File("target", "rels.bin");
-	File nodesFile = new File("target", "nodes.bin");
+	Path relsPath = Path.of("target", "rels.bin");
+	Path nodesPath = Path.of("target", "nodes.bin");
+	Path propsPath = Path.of("target", "properties.bin");
 
 	@BeforeEach
 	public void setup() throws IOException {
-		Files.deleteIfExists(nodesFile.toPath());
-		Files.deleteIfExists(relsFile.toPath());
+		Files.deleteIfExists(nodesPath);
+		Files.deleteIfExists(relsPath);
+		Files.deleteIfExists(propsPath);
 	}
 
 	@Test
 	public void testNode() throws Exception {
-		try (MemoryStorageImpl st = new MemoryStorageImpl(nodesFile, relsFile)) {
+		try (GraphStorageImpl st = new GraphStorageImpl(nodesPath, relsPath, propsPath)) {
 			measure(() -> {
 				for (int i = 0; i < 4; i++) {
 					System.out.println("Storing: " + i);
@@ -40,7 +42,7 @@ public class NodeTest {
 
 	@Test
 	public void testRelationship() throws Exception {
-		try (MemoryStorageImpl st = new MemoryStorageImpl(nodesFile, relsFile)) {
+		try (GraphStorageImpl st = new GraphStorageImpl(nodesPath, relsPath, propsPath)) {
 			measure(() -> {
 				for (int i = 0; i < 4; i++) {
 					System.out.println("Storing: " + i);
@@ -65,7 +67,7 @@ public class NodeTest {
 			st.rel().store(st.rel().id(), 20, 10, "Hello World3");
 			assertEquals(0, st.rel().getFreeIds().size(), "There should be no free ids");
 		}
-		try (MemoryStorageImpl st = new MemoryStorageImpl(nodesFile, relsFile)) {
+		try (GraphStorageImpl st = new GraphStorageImpl(nodesPath, relsPath, propsPath)) {
 			for (Long id : st.rel().getFreeIds()) {
 				System.out.println("Free Id: " + id);
 			}

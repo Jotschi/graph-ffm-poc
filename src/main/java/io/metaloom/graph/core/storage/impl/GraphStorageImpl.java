@@ -1,20 +1,24 @@
 package io.metaloom.graph.core.storage.impl;
 
-import java.io.File;
 import java.io.FileNotFoundException;
+import java.nio.file.Path;
 
+import io.metaloom.graph.core.storage.GraphStorage;
 import io.metaloom.graph.core.storage.NodeStorage;
 import io.metaloom.graph.core.storage.RelationshipStorage;
 
-public class MemoryStorageImpl implements AutoCloseable {
+public class GraphStorageImpl implements GraphStorage {
 
-	private RelationshipStorageImpl relationshipStorage;
+	private final RelationshipStorageImpl relationshipStorage;
 
-	private NodeStorageImpl nodesStorage;
+	private final NodeStorageImpl nodesStorage;
 
-	public MemoryStorageImpl(File nodesFile, File relsFile) throws FileNotFoundException {
-		this.relationshipStorage = new RelationshipStorageImpl(relsFile);
-		this.nodesStorage = new NodeStorageImpl(nodesFile);
+	private final PropertyStorageImpl propertyStorage;
+
+	public GraphStorageImpl(Path nodesPath, Path relsPath, Path propsPath) throws FileNotFoundException {
+		this.relationshipStorage = new RelationshipStorageImpl(relsPath);
+		this.nodesStorage = new NodeStorageImpl(nodesPath);
+		this.propertyStorage = new PropertyStorageImpl(propsPath);
 	}
 
 	public void close() {

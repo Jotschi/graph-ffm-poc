@@ -1,6 +1,5 @@
 package io.metaloom.graph.core.storage.impl;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.foreign.GroupLayout;
@@ -9,11 +8,12 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
+import java.nio.file.Path;
 
-import io.metaloom.graph.core.storage.AbstractMemoryMappedFileStorage;
+import io.metaloom.graph.core.storage.AbstractGraphStorage;
 import io.metaloom.graph.core.storage.RelationshipStorage;
 
-public class RelationshipStorageImpl extends AbstractMemoryMappedFileStorage implements RelationshipStorage {
+public class RelationshipStorageImpl extends AbstractGraphStorage implements RelationshipStorage {
 
 	private static final GroupLayout REL_LAYOUT = MemoryLayout.structLayout(
 		ValueLayout.JAVA_LONG.withName("relId"),
@@ -23,11 +23,9 @@ public class RelationshipStorageImpl extends AbstractMemoryMappedFileStorage imp
 		MemoryLayout.paddingLayout(7),
 		MemoryLayout.sequenceLayout(32, ValueLayout.JAVA_BYTE).withName("label")); // 32-byte label
 
-	public RelationshipStorageImpl(File file) throws FileNotFoundException {
-		super(file, REL_LAYOUT);
+	public RelationshipStorageImpl(Path path) throws FileNotFoundException {
+		super(path, REL_LAYOUT);
 	}
-
-
 
 	@Override
 	public long[] load(long relId) throws IOException {
@@ -63,7 +61,7 @@ public class RelationshipStorageImpl extends AbstractMemoryMappedFileStorage imp
 		FileChannel fc = raFile.getChannel();
 
 		// Ensure the file is large enough
-		ensureFileCapacity(fc, offset);
+		ensureFileCapacity(fc, offset, layout);
 
 		// Set the values
 		MemorySegment memorySegment = fc.map(MapMode.READ_WRITE, offset, REL_LAYOUT.byteSize(), arena);

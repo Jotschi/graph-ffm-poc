@@ -1,28 +1,19 @@
 package io.metaloom.graph.core.storage;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.VarHandle;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class AbstractMemoryMappedFileStorage implements Storage {
-
-	protected Arena arena;
-
-	protected RandomAccessFile raFile;
-
-	protected File file;
+public class AbstractGraphStorage extends AbstractMMapFileStorage implements Storage {
 
 	protected final MemoryLayout layout;
 
@@ -32,11 +23,9 @@ public class AbstractMemoryMappedFileStorage implements Storage {
 
 	protected final AtomicLong idProvider;
 
-	public AbstractMemoryMappedFileStorage(File file, MemoryLayout layout) throws FileNotFoundException {
-		this.arena = Arena.ofShared();
-		this.file = file;
+	public AbstractGraphStorage(Path path, MemoryLayout layout) throws FileNotFoundException {
+		super(path);
 		this.layout = layout;
-		this.raFile = new RandomAccessFile(file, "rw");
 
 		this.labelHandle = layout.varHandle(
 			MemoryLayout.PathElement.groupElement("label"),
@@ -48,14 +37,6 @@ public class AbstractMemoryMappedFileStorage implements Storage {
 		} catch (Exception e) {
 			throw new RuntimeException("Error while loading free ids", e);
 		}
-	}
-
-	@Override
-	public void close() throws Exception {
-		if (arena != null) {
-			arena.close();
-		}
-		raFile.close();
 	}
 
 	public void writeLabel(MemorySegment segment, String label) {
@@ -108,26 +89,18 @@ public class AbstractMemoryMappedFileStorage implements Storage {
 		if (raFile.length() == 0) {
 			return 0L;
 		}
-		FileChannel fc = raFile.getChannel();
-		long lastId = 0L;
-		for (long offset = 0; offset < file.length(); offset += layout.byteSize()) {
-			MemorySegment memorySegment = fc.map(MapMode.READ_ONLY, offset, layout.byteSize(), arena);
-			boolean free = (boolean) layout.varHandle(MemoryLayout.PathElement.groupElement("free")).get(memorySegment, 0);
-			lastId = offset / layout.byteSize();
-			if (free) {
-				freeIds.add(lastId);
-			}
-		}
-		return lastId;
-	}
 
-	protected void ensureFileCapacity(FileChannel fc, long offset) throws IOException {
-		if (raFile.length() < offset + layout.byteSize()) {
-			// Write zeros to extend the file
-			byte[] zeros = new byte[(int) (offset + layout.byteSize() - raFile.length())];
-			fc.position(raFile.length());
-			fc.write(ByteBuffer.wrap(zeros));
-			// System.out.println("Adding: " + zeros.length + " bytes to the file");
+		try (FileChannel fc = raFile.getChannel()) {
+			long lastId = 0L;
+			for (long offset = 0; offset < raFile.length(); offset += layout.byteSize()) {
+				MemorySegment memorySegment = fc.map(MapMode.READ_ONLY, offset, layout.byteSize(), arena);
+				boolean free = (boolean) layout.varHandle(MemoryLayout.PathElement.groupElement("free")).get(memorySegment, 0);
+				lastId = offset / layout.byteSize();
+				if (free) {
+					freeIds.add(lastId);
+				}
+			}
+			return lastId;
 		}
 	}
 
