@@ -9,8 +9,8 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.metaloom.graph.core.storage.PropertyStorage;
-import io.metaloom.graph.core.storage.impl.PropertyStorageImpl;
+import io.metaloom.graph.core.storage.data.PropertyDataStorage;
+import io.metaloom.graph.core.storage.data.impl.PropertyDataStorageImpl;
 
 public class PropertyStorageTest {
 
@@ -24,7 +24,7 @@ public class PropertyStorageTest {
 
 	@Test
 	public void testBasics() throws Exception {
-		try (PropertyStorage st = new PropertyStorageImpl(path)) {
+		try (PropertyDataStorage st = new PropertyDataStorageImpl(path)) {
 			long id = st.store("keyA", "value");
 			long id2 = st.store("keyB", "valz");
 			long id3 = st.store("k", LONG_TEXT);
@@ -35,7 +35,7 @@ public class PropertyStorageTest {
 		}
 	}
 
-	private void assertId(PropertyStorage st, long id, String key, String value) throws IOException {
+	private void assertId(PropertyDataStorage st, long id, String key, String value) throws IOException {
 		String[] values = st.get(id);
 		assertEquals(key, values[0]);
 		assertEquals(value, values[1]);

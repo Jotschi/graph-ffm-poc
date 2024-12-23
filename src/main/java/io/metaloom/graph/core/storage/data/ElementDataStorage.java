@@ -1,9 +1,9 @@
-package io.metaloom.graph.core.storage;
+package io.metaloom.graph.core.storage.data;
 
 import java.io.IOException;
 import java.util.Deque;
 
-public interface Storage extends AutoCloseable {
+public interface ElementDataStorage extends AutoCloseable {
 
 	Deque<Long> getFreeIds();
 

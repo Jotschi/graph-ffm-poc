@@ -1,4 +1,4 @@
-package io.metaloom.graph.core.storage;
+package io.metaloom.graph.core.storage.data;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -13,13 +13,19 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class AbstractGraphStorage extends AbstractMMapFileStorage implements Storage {
+public class AbstractGraphStorage extends AbstractMMapFileStorage implements ElementDataStorage {
+
+	public static final int MAX_LABEL_LEN = 32;
+
+	public static final int MAX_PROP_IDS = 128;
 
 	protected final MemoryLayout layout;
 
 	protected final Deque<Long> freeIds = new ArrayDeque<>();
 
 	protected final VarHandle labelHandle;
+
+	protected final VarHandle propsHandle;
 
 	protected final AtomicLong idProvider;
 
@@ -31,12 +37,34 @@ public class AbstractGraphStorage extends AbstractMMapFileStorage implements Sto
 			MemoryLayout.PathElement.groupElement("label"),
 			MemoryLayout.PathElement.sequenceElement());
 
+		this.propsHandle = layout.varHandle(
+			MemoryLayout.PathElement.groupElement("props"),
+			MemoryLayout.PathElement.sequenceElement());
+
 		try {
 			long lastId = loadFreeIds(layout);
 			this.idProvider = new AtomicLong(lastId++);
 		} catch (Exception e) {
 			throw new RuntimeException("Error while loading free ids", e);
 		}
+	}
+
+	protected void writePropIds(MemorySegment segment, long propIds[]) {
+		if (propIds == null) {
+			return;
+		}
+		System.out.println("Writing prop Ids");
+
+		// Write the label bytes into the sequence
+		for (int i = 0; i < propIds.length; i++) {
+			propsHandle.set(segment, 0, (long) i, propIds[i]);
+		}
+
+		// Pad the remaining space with -1
+		for (int i = propIds.length; i < 32; i++) {
+			propsHandle.set(segment, 0, (long) i, (byte) -1);
+		}
+
 	}
 
 	public void writeLabel(MemorySegment segment, String label) {
@@ -58,16 +86,30 @@ public class AbstractGraphStorage extends AbstractMMapFileStorage implements Sto
 		}
 	}
 
-	public void readLabel(MemorySegment segment) {
-		byte[] labelBytes = new byte[32];
-		for (int i = 0; i < 32; i++) {
+	public String readLabel(MemorySegment segment) {
+		byte[] labelBytes = new byte[MAX_LABEL_LEN];
+		for (int i = 0; i < labelBytes.length; i++) {
 			labelBytes[i] = (byte) labelHandle.get(segment, 0, i);
 			if (labelBytes[i] == 0) {
 				break;
 			}
 		}
-		String retrievedLabel = new String(labelBytes, StandardCharsets.UTF_8).trim();
-		System.out.println("Retrieved Label: " + retrievedLabel);
+		return new String(labelBytes, StandardCharsets.UTF_8).trim();
+	}
+
+	public long[] readPropIds(MemorySegment segment) {
+		long[] ids = new long[MAX_PROP_IDS];
+		int nValues = 0;
+		for (int i = 0; i < MAX_PROP_IDS; i++) {
+			ids[i] = (long) propsHandle.get(segment, 0, i);
+			if (ids[i] == -1) {
+				long result[] = new long[nValues];
+				System.arraycopy(ids, 0, result, 0, nValues);
+				return result;
+			}
+			nValues++;
+		}
+		return ids;
 	}
 
 	@Override

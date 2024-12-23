@@ -1,10 +1,7 @@
-package io.metaloom.graph.core.storage.impl;
+package io.metaloom.graph.core.storage.data.impl;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.lang.foreign.Arena;
-import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.channels.FileChannel;
@@ -12,23 +9,21 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import io.metaloom.graph.core.storage.AbstractMMapFileStorage;
-import io.metaloom.graph.core.storage.PropertyStorage;
+import io.metaloom.graph.core.storage.data.AbstractMMapFileStorage;
+import io.metaloom.graph.core.storage.data.PropertyDataStorage;
 
-public class PropertyStorageImpl extends AbstractMMapFileStorage implements PropertyStorage {
+public class PropertyDataStorageImpl extends AbstractMMapFileStorage implements PropertyDataStorage {
 
 	private static long alignment = 7;
-	// private static final GroupLayout LAYOUT = MemoryLayout.structLayout(
-	// ValueLayout.JAVA_LONG.withName("id"),
-	// ValueLayout.JAVA_BOOLEAN.withName("free"));
 
 	private AtomicLong nextFreeOffset = new AtomicLong();
 
-	public PropertyStorageImpl(Path path) throws FileNotFoundException {
+	public PropertyDataStorageImpl(Path path) throws FileNotFoundException {
 		super(path);
-
 	}
 
 	@Override
@@ -67,6 +62,18 @@ public class PropertyStorageImpl extends AbstractMMapFileStorage implements Prop
 		}
 	}
 
+	@Override
+	public long[] store(Map<String, String> props) throws IOException {
+		long propIds[] = new long[props.size()];
+		int i = 0;
+		for (Map.Entry<String, String> entry : props.entrySet()) {
+			long propId = store(entry.getKey(), entry.getValue());
+			propIds[i] = propId;
+			i++;
+		}
+		return propIds;
+	}
+
 	private static long writeRecord(MemorySegment segment, long offset, long id, String key, String value) {
 
 		// Write ID
@@ -97,6 +104,16 @@ public class PropertyStorageImpl extends AbstractMMapFileStorage implements Prop
 		offset = (offset + alignment) & ~alignment;
 
 		return offset;
+	}
+
+	@Override
+	public Map<String, String> getAll(long[] propIds) throws IOException {
+		Map<String, String> props = new HashMap<>();
+		for (int i = 0; i < propIds.length; i++) {
+			String[] entry = get(propIds[i]);
+			props.put(entry[0], entry[1]);
+		}
+		return props;
 	}
 
 	private static String[] readRecord(MemorySegment segment, long offset) {

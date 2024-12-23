@@ -1,85 +1,87 @@
 package io.metaloom.graph.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.metaloom.graph.core.storage.impl.GraphStorageImpl;
-
-// Ensure map count is large enough
-//sysctl -w vm.max_map_count=131072
+import io.metaloom.graph.core.element.Node;
+import io.metaloom.graph.core.element.Relationship;
+import io.metaloom.graph.core.element.impl.NodeImpl;
+import io.metaloom.graph.core.element.impl.RelationshipImpl;
+import io.metaloom.graph.core.storage.data.GraphStorage;
+import io.metaloom.graph.core.storage.data.impl.GraphStorageImpl;
 
 public class GraphStorageTest {
 
-	Path relsPath = Path.of("target", "rels.bin");
-	Path nodesPath = Path.of("target", "nodes.bin");
-	Path propsPath = Path.of("target", "properties.bin");
+	private Path basePath = Paths.get("target", "graphstorage-test");
 
 	@BeforeEach
 	public void setup() throws IOException {
-		Files.deleteIfExists(nodesPath);
-		Files.deleteIfExists(relsPath);
-		Files.deleteIfExists(propsPath);
+		FileUtils.deleteDirectory(basePath.toFile());
+		Files.createDirectories(basePath);
 	}
 
 	@Test
-	public void testNode() throws Exception {
-		try (GraphStorageImpl st = new GraphStorageImpl(nodesPath, relsPath, propsPath)) {
-			measure(() -> {
-				for (int i = 0; i < 4; i++) {
-					System.out.println("Storing: " + i);
-					st.node().store(i, "Person");
-				}
-				return null;
-			});
+	public void testAC() {
+		long src[] = new long[] { 1, 2, 3, 4 };
+		long dest[] = new long[2];
+		System.arraycopy(src, 0, dest, 0, 2);
+		for (int i = 0; i < dest.length; i++) {
+			System.out.println("Dest: [" + i + "]=" + dest[i]);
 		}
 	}
 
 	@Test
-	public void testRelationship() throws Exception {
-		try (GraphStorageImpl st = new GraphStorageImpl(nodesPath, relsPath, propsPath)) {
-			measure(() -> {
-				for (int i = 0; i < 4; i++) {
-					System.out.println("Storing: " + i);
-					st.rel().store(st.rel().id(), i + 20, i + 10, "Hello World");
-				}
-				return null;
-			});
+	public void testBasics() throws FileNotFoundException, Exception {
+		try (GraphStorage st = new GraphStorageImpl(basePath)) {
+			Node nodeA = new NodeImpl("Person");
+			nodeA.set("name", "Wes Anderson");
 
-			for (int i = 0; i < 4; i++) {
-				long[] rels = st.rel().load(i);
-				System.out.println("REL: " + i + "=>" + rels[0] + "," + rels[1]);
-			}
+			Node nodeB = new NodeImpl("Vehicle");
+			nodeB.set("name", "VW Beetle");
 
-			st.rel().load(2);
-			st.rel().delete(2);
-			st.rel().delete(4);
-			st.rel().load(2);
-			assertEquals(2, st.rel().getFreeIds().size(), "There should be two free ids");
-			st.rel().store(st.rel().id(), 20, 10, "Hello World1");
-			st.rel().store(st.rel().id(), 20, 10, "Hello World2");
-			assertEquals(0, st.rel().getFreeIds().size(), "There should be no free ids");
-			st.rel().store(st.rel().id(), 20, 10, "Hello World3");
-			assertEquals(0, st.rel().getFreeIds().size(), "There should be no free ids");
+			Relationship rel = new RelationshipImpl(nodeA, "HAS_RELATIONSHIP", nodeB);
+			rel.set("name", "relName");
+
+			long id = st.store(rel);
+
+			Relationship loadedRel = st.loadRelationship(id);
+			assertRelationship(loadedRel);
 		}
-		try (GraphStorageImpl st = new GraphStorageImpl(nodesPath, relsPath, propsPath)) {
-			for (Long id : st.rel().getFreeIds()) {
-				System.out.println("Free Id: " + id);
-			}
-		}
-
 	}
 
-	private <T> T measure(TimeableAction<T> action) throws Exception {
-		long start = System.currentTimeMillis();
-		T ret = action.invoke();
-		System.out.println("Duration: " + (System.currentTimeMillis() - start));
-		return ret;
-	}
+	private void assertRelationship(Relationship loadedRel) {
+		// REL
+		assertNotNull(loadedRel);
+		assertEquals(1, loadedRel.props().size());
+		assertEquals("HAS_RELATIONSHIP", loadedRel.label(), "The relationship label should have been set.");
+		assertNotNull(loadedRel.id(), "The loaded relationship has no id set.");
+		assertEquals("relName", loadedRel.get("name"), "The relationship name prop should have been set.");
 
+		// FROM
+		Node from = loadedRel.from();
+		assertNotNull(from);
+		assertEquals(1, from.props().size());
+		assertEquals("Wes Anderson", from.get("name"));
+		assertNotNull(from.id());
+		assertEquals("Person", from.label());
+
+		// TO
+		Node to = loadedRel.to();
+		assertNotNull(to);
+		assertEquals(1, to.props().size());
+		assertEquals("VW Beetle", to.get("name"));
+		assertNotNull(to.id());
+		assertEquals("Vehicle", to.label());
+
+	}
 }

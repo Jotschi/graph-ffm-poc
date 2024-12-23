@@ -1,4 +1,4 @@
-package io.metaloom.graph.core.storage;
+package io.metaloom.graph.core.storage.data;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
