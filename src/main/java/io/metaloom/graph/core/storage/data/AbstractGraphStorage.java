@@ -53,9 +53,7 @@ public class AbstractGraphStorage extends AbstractMMapFileStorage implements Ele
 		if (propIds == null) {
 			return;
 		}
-		System.out.println("Writing prop Ids");
 
-		// Write the label bytes into the sequence
 		for (int i = 0; i < propIds.length; i++) {
 			propsHandle.set(segment, 0, (long) i, propIds[i]);
 		}
@@ -69,11 +67,11 @@ public class AbstractGraphStorage extends AbstractMMapFileStorage implements Ele
 
 	public void writeLabel(MemorySegment segment, String label) {
 		byte[] bytes = label.getBytes(StandardCharsets.UTF_8);
-		if (bytes.length > 32) {
-			throw new IllegalArgumentException("Label exceeds 32 bytes when encoded.");
+		if (bytes.length > MAX_LABEL_LEN) {
+			throw new IllegalArgumentException("Label exceeds " + MAX_LABEL_LEN + " bytes when encoded.");
 		}
 
-		System.out.println("Writing: " + label);
+		// System.out.println("Writing: " + label);
 
 		// Write the label bytes into the sequence
 		for (int i = 0; i < bytes.length; i++) {

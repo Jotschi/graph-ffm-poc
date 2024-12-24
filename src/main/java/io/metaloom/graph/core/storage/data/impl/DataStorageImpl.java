@@ -33,6 +33,11 @@ public class DataStorageImpl implements DataStorage {
 		} catch (Exception e) {
 			throw new RuntimeException("Failure while closing nodes storage", e);
 		}
+		try {
+			propertyStorage.close();
+		} catch (Exception e) {
+			throw new RuntimeException("Failure while closing property storage", e);
+		}
 	}
 
 	@Override

@@ -2,6 +2,7 @@ package io.metaloom.graph.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,7 +13,7 @@ import org.junit.jupiter.api.Test;
 import io.metaloom.graph.core.storage.data.PropertyDataStorage;
 import io.metaloom.graph.core.storage.data.impl.PropertyDataStorageImpl;
 
-public class PropertyStorageTest {
+public class PropertyDataStorageTest extends AbstractGraphCoreTest {
 
 	private static final String LONG_TEXT = "This is a longer text 12345678";
 	private Path path = Path.of("target", "data.mmap");
@@ -32,6 +33,15 @@ public class PropertyStorageTest {
 			assertId(st, id, "keyA", "value");
 			assertId(st, id2, "keyB", "valz");
 			assertId(st, id3, "k", LONG_TEXT);
+		}
+	}
+
+	@Test
+	public void testBulk() throws FileNotFoundException, Exception {
+		try (PropertyDataStorage st = new PropertyDataStorageImpl(path)) {
+			for (int i = 0; i < 100_000; i++) {
+				st.store("keyA", "value");
+			}
 		}
 	}
 

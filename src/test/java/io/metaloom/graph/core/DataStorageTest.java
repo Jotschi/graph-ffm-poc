@@ -1,6 +1,7 @@
 package io.metaloom.graph.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,7 +17,7 @@ import io.metaloom.graph.core.storage.data.impl.RelationshipData;
 // Ensure map count is large enough
 //sysctl -w vm.max_map_count=131072
 
-public class DataStorageTest {
+public class DataStorageTest extends AbstractGraphCoreTest {
 
 	Path relsPath = Path.of("target", "rels.bin");
 	Path nodesPath = Path.of("target", "nodes.bin");
@@ -82,14 +83,8 @@ public class DataStorageTest {
 			long id = st.rel().id();
 			st.rel().store(id, 41L, 42L, "test", new long[] { 1, 2, 3 });
 			RelationshipData data = st.rel().load(id);
+			assertNotNull(data);
 		}
-	}
-
-	private <T> T measure(TimeableAction<T> action) throws Exception {
-		long start = System.currentTimeMillis();
-		T ret = action.invoke();
-		System.out.println("Duration: " + (System.currentTimeMillis() - start));
-		return ret;
 	}
 
 }

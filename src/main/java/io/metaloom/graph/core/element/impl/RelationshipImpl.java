@@ -1,5 +1,7 @@
 package io.metaloom.graph.core.element.impl;
 
+import static io.metaloom.graph.core.utils.GraphUtils.propsToString;
+
 import io.metaloom.graph.core.element.AbstractElement;
 import io.metaloom.graph.core.element.Node;
 import io.metaloom.graph.core.element.Relationship;
@@ -24,6 +26,13 @@ public class RelationshipImpl extends AbstractElement implements Relationship {
 	@Override
 	public Node from() {
 		return from;
+	}
+
+	@Override
+	public String toString() {
+		return "(" + from.id() + ":" + from.label() + " " + propsToString(from.props()) + ")-[" + id() + ":" + label() + " " + propsToString(props())
+			+ "]->("
+			+ to.id() + ":" + to.label() + " " + propsToString(to.props()) + ")";
 	}
 
 }

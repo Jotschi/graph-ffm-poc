@@ -10,4 +10,6 @@ public interface RelationshipDataStorage extends ElementDataStorage {
 
 	RelationshipData load(long relId) throws IOException;
 
+	long[] loadRelationshipIds(long fromId);
+
 }

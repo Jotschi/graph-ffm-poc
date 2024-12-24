@@ -20,7 +20,7 @@ import io.metaloom.graph.core.element.impl.RelationshipImpl;
 import io.metaloom.graph.core.storage.data.GraphStorage;
 import io.metaloom.graph.core.storage.data.impl.GraphStorageImpl;
 
-public class GraphStorageTest {
+public class GraphStorageTest extends AbstractGraphCoreTest {
 
 	private Path basePath = Paths.get("target", "graphstorage-test");
 
@@ -28,16 +28,6 @@ public class GraphStorageTest {
 	public void setup() throws IOException {
 		FileUtils.deleteDirectory(basePath.toFile());
 		Files.createDirectories(basePath);
-	}
-
-	@Test
-	public void testAC() {
-		long src[] = new long[] { 1, 2, 3, 4 };
-		long dest[] = new long[2];
-		System.arraycopy(src, 0, dest, 0, 2);
-		for (int i = 0; i < dest.length; i++) {
-			System.out.println("Dest: [" + i + "]=" + dest[i]);
-		}
 	}
 
 	@Test
@@ -59,11 +49,74 @@ public class GraphStorageTest {
 		}
 	}
 
+	@Test
+	public void testBulk() throws FileNotFoundException, Exception {
+		try (GraphStorage st = new GraphStorageImpl(basePath)) {
+
+			measure(() -> {
+				for (int i = 0; i < 10_000; i++) {
+					Node nodeA = new NodeImpl("Person");
+					nodeA.set("name", "Wes Anderson");
+
+					Node nodeB = new NodeImpl("Vehicle");
+					nodeB.set("name", "VW Beetle");
+
+					Relationship rel = new RelationshipImpl(nodeA, "HAS_RELATIONSHIP", nodeB);
+					rel.set("name", "relName");
+
+					long id = st.store(rel);
+
+					Relationship loadedRel = st.loadRelationship(id);
+					assertRelationship(loadedRel);
+				}
+				return null;
+			});
+		}
+
+		try (GraphStorage st = new GraphStorageImpl(basePath)) {
+			Relationship rel = st.loadRelationship(0L);
+			assertRelationship(rel);
+		}
+	}
+
+	@Test
+	public void testWriteReadFS() throws FileNotFoundException, Exception {
+		try (GraphStorage st = new GraphStorageImpl(basePath)) {
+				Node nodeA = new NodeImpl("Person");
+			nodeA.set("name", "Wes Anderson");
+
+			Node nodeB = new NodeImpl("Vehicle");
+			nodeB.set("name", "VW Beetle");
+
+			Relationship rel = new RelationshipImpl(nodeA, "OWNS", nodeB);
+			rel.set("name", "relName");
+
+			long id = st.store(rel);
+
+			Relationship loadedRel = st.loadRelationship(id);
+			System.out.println(loadedRel);
+			assertRelationship(loadedRel);
+		}
+
+		try (GraphStorage st = new GraphStorageImpl(basePath)) {
+			Relationship rel = st.loadRelationship(1L);
+			System.out.println(rel);
+			assertRelationship(rel);
+		}
+	}
+	
+	@Test
+	public void testTraverse() throws FileNotFoundException, Exception {
+		try (GraphStorage st = new GraphStorageImpl(basePath)) {
+			st.loadRelationships(0);
+		}
+	}
+
 	private void assertRelationship(Relationship loadedRel) {
 		// REL
 		assertNotNull(loadedRel);
 		assertEquals(1, loadedRel.props().size());
-		assertEquals("HAS_RELATIONSHIP", loadedRel.label(), "The relationship label should have been set.");
+		assertEquals("OWNS", loadedRel.label(), "The relationship label should have been set.");
 		assertNotNull(loadedRel.id(), "The loaded relationship has no id set.");
 		assertEquals("relName", loadedRel.get("name"), "The relationship name prop should have been set.");
 

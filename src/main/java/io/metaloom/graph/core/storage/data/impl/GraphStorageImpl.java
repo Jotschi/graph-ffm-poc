@@ -3,6 +3,8 @@ package io.metaloom.graph.core.storage.data.impl;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Set;
 
 import io.metaloom.graph.core.element.Node;
 import io.metaloom.graph.core.element.Relationship;
@@ -35,11 +37,6 @@ public class GraphStorageImpl implements GraphStorage {
 	}
 
 	@Override
-	public long store(Node node) {
-		throw new RuntimeException("Not implemented");
-	}
-
-	@Override
 	public Relationship loadRelationship(long id) throws IOException {
 		RelationshipData relData = data.rel().load(id);
 
@@ -63,6 +60,16 @@ public class GraphStorageImpl implements GraphStorage {
 		rel.setId(id);
 		rel.putAll(data.prop().getAll(relData.propIds()));
 		return rel;
+	}
+
+	@Override
+	public Set<Relationship> loadRelationships(long fromId) throws IOException {
+		long[] relIds = data.rel().loadRelationshipIds(fromId);
+		Set<Relationship> relationships = new HashSet<>();
+		for (int i = 0; i < relIds.length; i++) {
+			relationships.add(loadRelationship(relIds[i]));
+		}
+		return relationships;
 	}
 
 	@Override

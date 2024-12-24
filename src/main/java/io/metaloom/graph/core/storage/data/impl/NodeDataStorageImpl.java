@@ -9,6 +9,7 @@ import java.lang.foreign.ValueLayout;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 import io.metaloom.graph.core.storage.data.AbstractGraphStorage;
 import io.metaloom.graph.core.storage.data.NodeDataStorage;
@@ -31,17 +32,18 @@ public class NodeDataStorageImpl extends AbstractGraphStorage implements NodeDat
 		// Calculate the offset
 		long offset = id * NODE_LAYOUT.byteSize();
 
-		FileChannel fc = raFile.getChannel();
+		try (FileChannel fc = FileChannel.open(path, StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE)) {
 
-		// Ensure the file is large enough
-		ensureFileCapacity(fc, offset, layout);
+			// Ensure the file is large enough
+			ensureFileCapacity(fc, offset, layout);
 
-		// Set the values
-		MemorySegment memorySegment = fc.map(MapMode.READ_WRITE, offset, NODE_LAYOUT.byteSize(), arena);
-		NODE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("nodeId")).set(memorySegment, 0, (long) id);
-		NODE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("free")).set(memorySegment, 0, false);
-		writeLabel(memorySegment, label);
-		writePropIds(memorySegment, propIds);
+			// Set the values
+			MemorySegment memorySegment = fc.map(MapMode.READ_WRITE, offset, NODE_LAYOUT.byteSize(), arena);
+			NODE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("nodeId")).set(memorySegment, 0, (long) id);
+			NODE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("free")).set(memorySegment, 0, false);
+			writeLabel(memorySegment, label);
+			writePropIds(memorySegment, propIds);
+		}
 	}
 
 	@Override
@@ -50,25 +52,23 @@ public class NodeDataStorageImpl extends AbstractGraphStorage implements NodeDat
 		long offset = nodeId * NODE_LAYOUT.byteSize();
 
 		// Map the memory segment
-		FileChannel fc = raFile.getChannel();
+		try (FileChannel fc = FileChannel.open(path, StandardOpenOption.READ)) {
 
-		// Check if the file is large enough
-		if (raFile.length() < offset + NODE_LAYOUT.byteSize()) {
-			throw new IOException("Relationship not found");
+			// Check if the file is large enough to even contain the node.
+			if (fc.size() < offset + NODE_LAYOUT.byteSize()) {
+				throw new IOException("Relationship not found");
+			}
+
+			MemorySegment memorySegment = fc.map(MapMode.READ_ONLY, offset, NODE_LAYOUT.byteSize(), arena);
+
+			// Get the values
+			boolean free = (boolean) NODE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("free")).get(memorySegment, 0);
+			String label = readLabel(memorySegment);
+			long[] propIds = readPropIds(memorySegment);
+
+			// System.out.println("Free: " + free);
+			return new NodeData(label, propIds);
 		}
-
-		MemorySegment memorySegment = fc.map(MapMode.READ_ONLY, offset, NODE_LAYOUT.byteSize(), arena);
-
-		// Get the values
-		// long fromId = (long) NODE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("nodeAId")).get(memorySegment, 0);
-		// long toId = (long) NODE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("nodeBId")).get(memorySegment, 0);
-		boolean free = (boolean) NODE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("free")).get(memorySegment, 0);
-		String label = readLabel(memorySegment);
-		long[] propIds = readPropIds(memorySegment);
-		// NODE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("props")).get(memorySegment, 0);
-
-		System.out.println("Free: " + free);
-		return new NodeData(label, propIds);
 	}
 
 }

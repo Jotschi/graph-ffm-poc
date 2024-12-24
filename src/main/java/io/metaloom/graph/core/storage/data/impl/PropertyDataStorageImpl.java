@@ -47,13 +47,12 @@ public class PropertyDataStorageImpl extends AbstractMMapFileStorage implements 
 
 			long offset = nextFreeOffset.get();
 
-			// ID + key len + key data + value len + value data
-			long dataSize = 1 + 1 + key.length() + 1 + value.length();
+			// ID + key len + key data + value len + value data + buffer size to avoid bogus grow calls
+			long dataSize = 1 + 1 + key.length() + 1 + value.length() + 512;
 			ensureFileCapacity(fileChannel, 0, dataSize);
 
-			long fileSize = Files.size(path);
-			fileSize = 512;
-			System.out.println("SIZE: " + fileSize);
+			long fileSize = fileChannel.size() + dataSize;
+			// System.out.println("SIZE: " + fileSize + " requested " + dataSize + " at offset " + offset);
 			MemorySegment segment = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, fileSize, arena);
 
 			long nextOffset = writeRecord(segment, offset, 1L, key, value);
@@ -77,15 +76,15 @@ public class PropertyDataStorageImpl extends AbstractMMapFileStorage implements 
 	private static long writeRecord(MemorySegment segment, long offset, long id, String key, String value) {
 
 		// Write ID
-		System.out.println("WRITE: " + offset);
+		// System.out.println("WRITE: " + offset);
 		segment.set(ValueLayout.JAVA_LONG, offset, id);
 		offset += Long.BYTES;
 
 		// Write key
-		System.out.println("W KL: " + offset);
+		// System.out.println("W KL: " + offset);
 		segment.set(ValueLayout.JAVA_INT, offset, key.length());
 		offset += Integer.BYTES;
-		System.out.println("W KV: " + offset);
+		// System.out.println("W KV: " + offset);
 		segment.setString(offset, key, StandardCharsets.UTF_8);
 		// segment.asSlice(offset, keyBytes.length).copyFrom(MemorySegment.ofArray(keyBytes));
 		offset += key.length();
@@ -93,10 +92,10 @@ public class PropertyDataStorageImpl extends AbstractMMapFileStorage implements 
 		offset = (offset + alignment) & ~alignment;
 
 		// Write value
-		System.out.println("W VL: " + offset);
+		// System.out.println("W VL: " + offset);
 		segment.set(ValueLayout.JAVA_INT, offset, value.length());
 		offset += Integer.BYTES;
-		System.out.println("W VV: " + offset);
+		// System.out.println("W VV: " + offset);
 		segment.setString(offset, value, StandardCharsets.UTF_8);
 		// segment.asSlice(offset, valueBytes.length).copyFrom(MemorySegment.ofArray(valueBytes));
 		offset += value.length();
@@ -117,20 +116,20 @@ public class PropertyDataStorageImpl extends AbstractMMapFileStorage implements 
 	}
 
 	private static String[] readRecord(MemorySegment segment, long offset) {
-		System.out.println();
-		System.out.println("READ[offset]: " + offset);
+		//System.out.println();
+		// System.out.println("READ[offset]: " + offset);
 		// Read ID
 		long id = segment.get(ValueLayout.JAVA_LONG, offset);
 		offset += Long.BYTES;
-		System.out.println("ReadID[id]: " + id);
+		// System.out.println("ReadID[id]: " + id);
 
 		// Read key
-		System.out.println("R KL: " + offset);
+		// System.out.println("R KL: " + offset);
 		int keyLength = segment.get(ValueLayout.JAVA_INT, offset);
 		offset += Integer.BYTES;
-		System.out.println("R KLV: " + keyLength);
+		// System.out.println("R KLV: " + keyLength);
 
-		System.out.println("R KV: " + offset);
+		// System.out.println("R KV: " + offset);
 		MemorySegment slice = segment.asSlice(offset, keyLength);
 		String key = new String(slice.toArray(ValueLayout.JAVA_BYTE));
 		// System.out.println("SLICE: " + slice.getString(0));
@@ -140,16 +139,15 @@ public class PropertyDataStorageImpl extends AbstractMMapFileStorage implements 
 		offset = (offset + alignment) & ~alignment;
 
 		// Read value
-		System.out.println("R V: " + offset);
+		// System.out.println("R V: " + offset);
 		int valueLength = segment.get(ValueLayout.JAVA_INT, offset);
-		System.out.println("R VLV[len]: " + valueLength);
+		// System.out.println("R VLV[len]: " + valueLength);
 		offset += Integer.BYTES;
 		// MemorySegment valueSegment = segment.asSlice(offset, valueLength);
 		String value = segment.getString(offset, StandardCharsets.UTF_8).substring(0, valueLength);
 		offset += valueLength;
 
-		// Print the record
-		System.out.printf("Record: [id=%d, key=%s, value=%s]%n", id, key, value);
+		// System.out.printf("Record: [id=%d, key=%s, value=%s]%n", id, key, value);
 		offset = (offset + alignment) & ~alignment;
 
 		return new String[] { key, value };
@@ -157,11 +155,7 @@ public class PropertyDataStorageImpl extends AbstractMMapFileStorage implements 
 
 	@Override
 	public void close() throws Exception {
-		// try {
-		// arena.close();
-		// } catch (Exception e) {
-		// e.printStackTrace();
-		// }
+
 	}
 
 }
