@@ -3,7 +3,7 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.metaloom.graph</groupId>
-    <artifactId>graph-core</artifactId>
+    <artifactId>graph-storage-ffm-poc</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
     <parent>
@@ -13,13 +13,13 @@
     </parent>
 
     <name>Graph Core</name>
-    <url>https://github.com/metaloom/graph-core</url>
-    <description>A core java implementation for a graph storage</description>
+    <url>https://github.com/metaloom/graph-storage-ffm-poc</url>
+    <description>A java implementation for a graph storage</description>
     <inceptionYear>2024</inceptionYear>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.github.repository>metaloom/graph-core</project.github.repository>
+        <project.github.repository>jotschi/graph-storage-ffm-poc</project.github.repository>
     </properties>
 
     <dependencies>
