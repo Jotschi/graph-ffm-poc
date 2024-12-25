@@ -1,4 +1,4 @@
-package io.metaloom.graph.core;
+package io.metaloom.graph.core.ffm;
 
 import java.io.IOException;
 import java.lang.foreign.Arena;

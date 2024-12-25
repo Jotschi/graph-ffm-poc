@@ -7,27 +7,25 @@ import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.util.Objects;
 
-public class BTJava2 {
+public class LongBinaryTree {
 
 	private static final GroupLayout NODE_LAYOUT = MemoryLayout.structLayout(
 		ValueLayout.JAVA_LONG.withName("key"),
 		ValueLayout.JAVA_LONG.withName("value"),
-		ValueLayout.JAVA_LONG.withName("leftChildOffset"),
-		ValueLayout.JAVA_LONG.withName("rightChildOffset"));
+		ValueLayout.ADDRESS.withName("leftChildOffset"),
+		ValueLayout.ADDRESS.withName("rightChildOffset"));
 
 	private Arena arena = Arena.ofAuto();
 
 	class Node {
-		private MemorySegment left;
-		private MemorySegment right;
 		private MemorySegment segment;
 
 		public Node(long key, long value) {
 			this.segment = arena.allocate(NODE_LAYOUT);
 			NODE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("key")).set(segment, 0, (long) key);
 			NODE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("value")).set(segment, 0, (long) value);
-			this.left = null;
-			this.right = null;
+			NODE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("leftChildOffset")).set(segment, 0, MemorySegment.NULL);
+			NODE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("rightChildOffset")).set(segment, 0, MemorySegment.NULL);
 		}
 
 		public Node(MemorySegment segment) {
@@ -48,13 +46,22 @@ public class BTJava2 {
 		}
 
 		public Node getLeft() {
-			if (left == null) {
+			MemorySegment left = (MemorySegment) NODE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("leftChildOffset"))
+				.get(segment, 0);
+			if (left.address() == 0) {
 				return null;
 			}
+			left = left.reinterpret(NODE_LAYOUT.byteSize());
 			return new Node(left);
 		}
 
 		public Node getRight() {
+			MemorySegment right = (MemorySegment) NODE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("rightChildOffset"))
+				.get(segment, 0);
+			if (right.address() == 0) {
+				return null;
+			}
+			right = right.reinterpret(NODE_LAYOUT.byteSize());
 			if (right == null) {
 				return null;
 			}
@@ -62,20 +69,21 @@ public class BTJava2 {
 		}
 
 		public void setLeft(Node node) {
-			NODE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("leftChildOffset")).set(segment, 0, (long) node.segment.address());
-			left = node.segment;
+			NODE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("leftChildOffset"))
+				.set(segment, 0, node.segment);
+			// segment.set(ValueLayout.ADDRESS, 16, node.segment);
 		}
 
 		public void setRight(Node node) {
-			NODE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("rightChildOffset")).set(segment, 0, (long) node.segment.address());
-			right = node.segment;
+			NODE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("rightChildOffset"))
+				.set(segment, 0, node.segment);
+			// segment.set(ValueLayout.ADDRESS, 24, node.segment);
 		}
 	}
 
 	Node root;
 
-	// Constructor
-	public BTJava2() {
+	public LongBinaryTree() {
 		this.root = null;
 	}
 
@@ -166,34 +174,4 @@ public class BTJava2 {
 		}
 	}
 
-	// Main method for example usage
-	public static void main(String[] args) {
-		BTJava2 tree = new BTJava2();
-		tree.insert(8, 800);
-		tree.insert(3, 300);
-		tree.insert(10, 1000);
-		tree.insert(1, 100);
-		tree.insert(6, 600);
-		tree.insert(14, 1400);
-		tree.insert(4, 400);
-		tree.insert(7, 700);
-		tree.insert(13, 1300);
-
-		System.out.println("In-order Traversal:");
-		tree.inOrderTraversal();
-
-		System.out.println("\nPre-order Traversal:");
-		tree.preOrderTraversal();
-
-		System.out.println("\nPost-order Traversal:");
-		tree.postOrderTraversal();
-
-		System.out.println("\nSearching for key 10:");
-		Long value = tree.search(10);
-		if (value != null) {
-			System.out.println("Value found: " + value);
-		} else {
-			System.out.println("Key not found.");
-		}
-	}
 }

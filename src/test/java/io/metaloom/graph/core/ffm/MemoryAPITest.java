@@ -1,4 +1,4 @@
-package io.metaloom.graph.core;
+package io.metaloom.graph.core.ffm;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
@@ -33,6 +33,10 @@ public class MemoryAPITest {
 		// Print the key and value strings
 		System.out.println("Key: " + read(keySegment));
 		System.out.println("Value: " + read(valueSegment));
+
+		MemorySegment readSegment = MemorySegment.ofAddress(keySegment.address());
+		readSegment = readSegment.reinterpret(256);
+		System.out.println("Key (read again): " + read(readSegment));
 	}
 
 	private String read(MemorySegment keySegment) {

@@ -1,4 +1,4 @@
-package io.metaloom.graph.core;
+package io.metaloom.graph.core.ffm;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
