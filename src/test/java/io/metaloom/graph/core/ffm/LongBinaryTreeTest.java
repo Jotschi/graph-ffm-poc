@@ -2,7 +2,7 @@ package io.metaloom.graph.core.ffm;
 
 import org.junit.jupiter.api.Test;
 
-import io.metaloom.graph.core.storage.data.impl.LongBinaryTree;
+import io.metaloom.graph.core.storage.tree.LongBinaryTree;
 
 public class LongBinaryTreeTest {
 

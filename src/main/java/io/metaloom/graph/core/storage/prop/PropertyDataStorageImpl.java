@@ -1,6 +1,5 @@
-package io.metaloom.graph.core.storage.data.impl;
+package io.metaloom.graph.core.storage.prop;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
@@ -13,17 +12,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import io.metaloom.graph.core.storage.data.AbstractMMapFileStorage;
-import io.metaloom.graph.core.storage.data.PropertyDataStorage;
+import io.metaloom.graph.core.storage.data.AbstractElementStorage;
 
-public class PropertyDataStorageImpl extends AbstractMMapFileStorage implements PropertyDataStorage {
+public class PropertyDataStorageImpl extends AbstractElementStorage implements PropertyDataStorage {
 
 	private static long alignment = 7;
 
 	private AtomicLong nextFreeOffset = new AtomicLong();
 
-	public PropertyDataStorageImpl(Path path) throws FileNotFoundException {
-		super(path);
+	public PropertyDataStorageImpl(Path path) throws IOException {
+		super(path, "prop");
 	}
 
 	@Override
@@ -116,7 +114,7 @@ public class PropertyDataStorageImpl extends AbstractMMapFileStorage implements 
 	}
 
 	private static String[] readRecord(MemorySegment segment, long offset) {
-		//System.out.println();
+		// System.out.println();
 		// System.out.println("READ[offset]: " + offset);
 		// Read ID
 		long id = segment.get(ValueLayout.JAVA_LONG, offset);

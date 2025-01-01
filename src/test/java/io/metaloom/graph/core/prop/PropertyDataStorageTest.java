@@ -1,4 +1,4 @@
-package io.metaloom.graph.core;
+package io.metaloom.graph.core.prop;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -10,8 +10,9 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.metaloom.graph.core.storage.data.PropertyDataStorage;
-import io.metaloom.graph.core.storage.data.impl.PropertyDataStorageImpl;
+import io.metaloom.graph.core.AbstractGraphCoreTest;
+import io.metaloom.graph.core.storage.prop.PropertyDataStorage;
+import io.metaloom.graph.core.storage.prop.PropertyDataStorageImpl;
 
 public class PropertyDataStorageTest extends AbstractGraphCoreTest {
 

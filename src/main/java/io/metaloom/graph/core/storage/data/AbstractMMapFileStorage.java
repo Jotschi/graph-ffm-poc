@@ -1,6 +1,5 @@
 package io.metaloom.graph.core.storage.data;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.lang.foreign.Arena;
@@ -17,11 +16,10 @@ public abstract class AbstractMMapFileStorage implements AutoCloseable {
 
 	protected final Path path;
 
-	public AbstractMMapFileStorage(Path path) throws FileNotFoundException {
+	public AbstractMMapFileStorage(Path path) throws IOException {
 		this.arena = Arena.ofShared();
 		this.path = path;
 		this.raFile = new RandomAccessFile(path.toFile(), "rw");
-
 	}
 
 	@Override
@@ -45,4 +43,5 @@ public abstract class AbstractMMapFileStorage implements AutoCloseable {
 			// System.out.println("Adding: " + zeros.length + " bytes to the file");
 		}
 	}
+
 }

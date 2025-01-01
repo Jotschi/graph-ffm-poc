@@ -1,12 +1,14 @@
-package io.metaloom.graph.core.storage.data.impl;
+package io.metaloom.graph.core.storage.data;
 
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Path;
 
-import io.metaloom.graph.core.storage.data.DataStorage;
-import io.metaloom.graph.core.storage.data.NodeDataStorage;
-import io.metaloom.graph.core.storage.data.PropertyDataStorage;
-import io.metaloom.graph.core.storage.data.RelationshipDataStorage;
+import io.metaloom.graph.core.storage.node.NodeDataStorage;
+import io.metaloom.graph.core.storage.node.NodeDataStorageImpl;
+import io.metaloom.graph.core.storage.prop.PropertyDataStorage;
+import io.metaloom.graph.core.storage.prop.PropertyDataStorageImpl;
+import io.metaloom.graph.core.storage.rel.RelationshipDataStorage;
+import io.metaloom.graph.core.storage.rel.RelationshipDataStorageImpl;
 
 public class DataStorageImpl implements DataStorage {
 
@@ -16,7 +18,7 @@ public class DataStorageImpl implements DataStorage {
 
 	private final PropertyDataStorageImpl propertyStorage;
 
-	public DataStorageImpl(Path nodesPath, Path relsPath, Path propsPath) throws FileNotFoundException {
+	public DataStorageImpl(Path nodesPath, Path relsPath, Path propsPath) throws IOException {
 		this.relationshipStorage = new RelationshipDataStorageImpl(relsPath);
 		this.nodesStorage = new NodeDataStorageImpl(nodesPath);
 		this.propertyStorage = new PropertyDataStorageImpl(propsPath);

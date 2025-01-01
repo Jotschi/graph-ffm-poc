@@ -11,8 +11,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.metaloom.graph.core.storage.data.DataStorage;
-import io.metaloom.graph.core.storage.data.impl.DataStorageImpl;
-import io.metaloom.graph.core.storage.data.impl.RelationshipData;
+import io.metaloom.graph.core.storage.data.DataStorageImpl;
+import io.metaloom.graph.core.storage.rel.RelationshipData;
+import io.metaloom.graph.core.uuid.GraphUUID;
 
 // Ensure map count is large enough
 //sysctl -w vm.max_map_count=131072
@@ -36,7 +37,8 @@ public class DataStorageTest extends AbstractGraphCoreTest {
 			measure(() -> {
 				for (int i = 0; i < 4; i++) {
 					System.out.println("Storing: " + i);
-					st.node().store(i, "Person", new long[] { 1L, 2L, 3L, 4L });
+					GraphUUID uuid = st.node().uuid();
+					st.node().store(uuid, "Person", new long[] { 1L, 2L, 3L, 4L });
 				}
 				return null;
 			});
@@ -49,7 +51,7 @@ public class DataStorageTest extends AbstractGraphCoreTest {
 			measure(() -> {
 				for (int i = 0; i < 4; i++) {
 					System.out.println("Storing: " + i);
-					st.rel().store(st.rel().id(), i + 20, i + 10, "Hello World", null);
+					st.rel().store(st.rel().nextOffset(), i + 20, i + 10, "Hello World", null);
 				}
 				return null;
 			});
@@ -60,14 +62,14 @@ public class DataStorageTest extends AbstractGraphCoreTest {
 			}
 
 			st.rel().load(2);
-			st.rel().delete(2);
-			st.rel().delete(4);
+			st.rel().delete(GraphUUID.uuid(2));
+			st.rel().delete(GraphUUID.uuid(4));
 			st.rel().load(2);
 			assertEquals(2, st.rel().getFreeIds().size(), "There should be two free ids");
-			st.rel().store(st.rel().id(), 20, 10, "Hello World1", null);
-			st.rel().store(st.rel().id(), 20, 10, "Hello World2", null);
+			st.rel().store(st.rel().nextOffset(), 20, 10, "Hello World1", null);
+			st.rel().store(st.rel().nextOffset(), 20, 10, "Hello World2", null);
 			assertEquals(0, st.rel().getFreeIds().size(), "There should be no free ids");
-			st.rel().store(st.rel().id(), 20, 10, "Hello World3", null);
+			st.rel().store(st.rel().nextOffset(), 20, 10, "Hello World3", null);
 			assertEquals(0, st.rel().getFreeIds().size(), "There should be no free ids");
 		}
 		try (DataStorageImpl st = new DataStorageImpl(nodesPath, relsPath, propsPath)) {
@@ -80,7 +82,7 @@ public class DataStorageTest extends AbstractGraphCoreTest {
 	@Test
 	public void testRelationshipProps() throws Exception {
 		try (DataStorage st = new DataStorageImpl(nodesPath, relsPath, propsPath)) {
-			long id = st.rel().id();
+			long id = st.rel().nextOffset();
 			st.rel().store(id, 41L, 42L, "test", new long[] { 1, 2, 3 });
 			RelationshipData data = st.rel().load(id);
 			assertNotNull(data);

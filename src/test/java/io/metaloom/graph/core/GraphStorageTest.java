@@ -18,7 +18,7 @@ import io.metaloom.graph.core.element.Relationship;
 import io.metaloom.graph.core.element.impl.NodeImpl;
 import io.metaloom.graph.core.element.impl.RelationshipImpl;
 import io.metaloom.graph.core.storage.data.GraphStorage;
-import io.metaloom.graph.core.storage.data.impl.GraphStorageImpl;
+import io.metaloom.graph.core.storage.data.GraphStorageImpl;
 
 public class GraphStorageTest extends AbstractGraphCoreTest {
 

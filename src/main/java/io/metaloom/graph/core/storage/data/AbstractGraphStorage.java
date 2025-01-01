@@ -1,6 +1,5 @@
 package io.metaloom.graph.core.storage.data;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
@@ -13,7 +12,15 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class AbstractGraphStorage extends AbstractMMapFileStorage implements ElementDataStorage {
+import io.metaloom.graph.core.uuid.GraphUUID;
+
+public class AbstractGraphStorage extends AbstractElementStorage implements ElementStorage {
+
+	protected static final String LABEL_KEY = "label";
+
+	protected static final String PROPS_KEY = "props";
+
+	protected static final String FREE_KEY = "free";
 
 	public static final int MAX_LABEL_LEN = 32;
 
@@ -21,34 +28,34 @@ public class AbstractGraphStorage extends AbstractMMapFileStorage implements Ele
 
 	protected final MemoryLayout layout;
 
-	protected final Deque<Long> freeIds = new ArrayDeque<>();
+	protected final Deque<Long> freeOffsets = new ArrayDeque<>();
 
 	protected final VarHandle labelHandle;
 
 	protected final VarHandle propsHandle;
 
-	protected final AtomicLong idProvider;
-
-	public AbstractGraphStorage(Path path, MemoryLayout layout) throws FileNotFoundException {
-		super(path);
+	protected final AtomicLong offsetProvider;
+	
+	public AbstractGraphStorage(Path path, MemoryLayout layout, String magicByte) throws IOException {
+		super(path, magicByte);
 		this.layout = layout;
 
 		this.labelHandle = layout.varHandle(
-			MemoryLayout.PathElement.groupElement("label"),
+			MemoryLayout.PathElement.groupElement(LABEL_KEY),
 			MemoryLayout.PathElement.sequenceElement());
 
 		this.propsHandle = layout.varHandle(
-			MemoryLayout.PathElement.groupElement("props"),
+			MemoryLayout.PathElement.groupElement(PROPS_KEY),
 			MemoryLayout.PathElement.sequenceElement());
 
 		try {
-			long lastId = loadFreeIds(layout);
-			this.idProvider = new AtomicLong(lastId++);
+			long lastOffset = loadFreeOffsets(layout);
+			this.offsetProvider = new AtomicLong(lastOffset);
 		} catch (Exception e) {
 			throw new RuntimeException("Error while loading free ids", e);
 		}
 	}
-
+	
 	protected void writePropIds(MemorySegment segment, long propIds[]) {
 		if (propIds == null) {
 			return;
@@ -111,9 +118,9 @@ public class AbstractGraphStorage extends AbstractMMapFileStorage implements Ele
 	}
 
 	@Override
-	public void delete(long relId) throws IOException {
+	public void delete(GraphUUID uuid) throws IOException {
 		// Calculate the offset
-		long offset = relId * layout.byteSize();
+		long offset = uuid.offset();
 		if (offset > raFile.length()) {
 			return;
 		}
@@ -121,41 +128,41 @@ public class AbstractGraphStorage extends AbstractMMapFileStorage implements Ele
 		// Map the memory segment
 		FileChannel fc = raFile.getChannel();
 		MemorySegment memorySegment = fc.map(MapMode.READ_WRITE, offset, layout.byteSize(), arena);
-		layout.varHandle(MemoryLayout.PathElement.groupElement("free")).set(memorySegment, 0, true);
-		freeIds.add(relId);
+		layout.varHandle(MemoryLayout.PathElement.groupElement(FREE_KEY)).set(memorySegment, 0, true);
+		freeOffsets.add(uuid.offset());
 	}
 
-	private long loadFreeIds(MemoryLayout layout) throws IOException {
+	private long loadFreeOffsets(MemoryLayout layout) throws IOException {
 		if (raFile.length() == 0) {
-			return 0L;
+			return HEADER_LAYOUT.byteSize();
 		}
 
 		try (FileChannel fc = raFile.getChannel()) {
-			long lastId = 0L;
-			for (long offset = 0; offset < raFile.length(); offset += layout.byteSize()) {
+			long lastOffset = HEADER_LAYOUT.byteSize();
+			for (long offset = HEADER_LAYOUT.byteSize(); offset < raFile.length(); offset += layout.byteSize()) {
 				MemorySegment memorySegment = fc.map(MapMode.READ_ONLY, offset, layout.byteSize(), arena);
-				boolean free = (boolean) layout.varHandle(MemoryLayout.PathElement.groupElement("free")).get(memorySegment, 0);
-				lastId = offset / layout.byteSize();
+				boolean free = (boolean) layout.varHandle(MemoryLayout.PathElement.groupElement(FREE_KEY)).get(memorySegment, 0);
+				lastOffset = offset / layout.byteSize();
 				if (free) {
-					freeIds.add(lastId);
+					freeOffsets.add(lastOffset);
 				}
 			}
-			return lastId;
+			return lastOffset;
 		}
 	}
 
 	@Override
-	public long id() {
-		if (freeIds.isEmpty()) {
-			return idProvider.incrementAndGet();
+	public long nextOffset() {
+		if (freeOffsets.isEmpty()) {
+			return offsetProvider.get();
 		} else {
-			return freeIds.pop();
+			return freeOffsets.pop();
 		}
 	}
 
 	@Override
 	public Deque<Long> getFreeIds() {
-		return freeIds;
+		return freeOffsets;
 	}
 
 }
