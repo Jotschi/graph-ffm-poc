@@ -4,26 +4,27 @@ import java.io.IOException;
 import java.util.Set;
 
 import io.metaloom.graph.core.element.Relationship;
+import io.metaloom.graph.core.uuid.GraphUUID;
 
 public interface GraphStorage extends AutoCloseable {
 
-	long store(Relationship rel) throws IOException;
+	GraphUUID create(Relationship rel) throws IOException;
 
 	/**
-	 * Load the relationship of the given id.
+	 * Load the relationship of the given uuid.
 	 * 
-	 * @param relId
+	 * @param uuid
 	 * @return
 	 * @throws IOException
 	 */
-	Relationship loadRelationship(long relId) throws IOException;
+	Relationship readRelationship(GraphUUID uuid) throws IOException;
 
 	/**
-	 * Load all relationships for the given from nodeId.
+	 * Load all relationships for the given from nodeUuid.
 	 * 
-	 * @param fromId
+	 * @param nodeUuid
 	 * @return
 	 */
-	Set<Relationship> loadRelationships(long fromId) throws IOException;
+	Set<Relationship> readRelationships(GraphUUID nodeUuid) throws IOException;
 
 }

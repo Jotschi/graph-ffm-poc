@@ -30,9 +30,9 @@ public class RelationshipImpl extends AbstractElement implements Relationship {
 
 	@Override
 	public String toString() {
-		return "(" + from.id() + ":" + from.label() + " " + propsToString(from.props()) + ")-[" + id() + ":" + label() + " " + propsToString(props())
+		return "(" + from.uuid() + ":" + from.label() + " " + propsToString(from.props()) + ")-[" + uuid() + ":" + label() + " " + propsToString(props())
 			+ "]->("
-			+ to.id() + ":" + to.label() + " " + propsToString(to.props()) + ")";
+			+ to.uuid() + ":" + to.label() + " " + propsToString(to.props()) + ")";
 	}
 
 }

@@ -3,7 +3,7 @@ package io.metaloom.graph.core.storage.prop;
 import java.io.IOException;
 import java.util.Map;
 
-public interface PropertyDataStorage extends AutoCloseable {
+public interface PropertyStorage extends AutoCloseable {
 
 	/**
 	 * Store the key and value and return the offset id for the stored entry

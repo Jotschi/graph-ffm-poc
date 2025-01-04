@@ -8,19 +8,15 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.concurrent.atomic.AtomicLong;
+import java.nio.file.StandardOpenOption;
 
 import io.metaloom.graph.core.uuid.GraphUUID;
 
-public class AbstractGraphStorage extends AbstractElementStorage implements ElementStorage {
+public abstract class AbstractGraphStorage<T> extends AbstractElementStorage<T> {
 
 	protected static final String LABEL_KEY = "label";
 
 	protected static final String PROPS_KEY = "props";
-
-	protected static final String FREE_KEY = "free";
 
 	public static final int MAX_LABEL_LEN = 32;
 
@@ -28,16 +24,12 @@ public class AbstractGraphStorage extends AbstractElementStorage implements Elem
 
 	protected final MemoryLayout layout;
 
-	protected final Deque<Long> freeOffsets = new ArrayDeque<>();
-
 	protected final VarHandle labelHandle;
 
 	protected final VarHandle propsHandle;
 
-	protected final AtomicLong offsetProvider;
-	
 	public AbstractGraphStorage(Path path, MemoryLayout layout, String magicByte) throws IOException {
-		super(path, magicByte);
+		super(path, magicByte, layout);
 		this.layout = layout;
 
 		this.labelHandle = layout.varHandle(
@@ -48,14 +40,8 @@ public class AbstractGraphStorage extends AbstractElementStorage implements Elem
 			MemoryLayout.PathElement.groupElement(PROPS_KEY),
 			MemoryLayout.PathElement.sequenceElement());
 
-		try {
-			long lastOffset = loadFreeOffsets(layout);
-			this.offsetProvider = new AtomicLong(lastOffset);
-		} catch (Exception e) {
-			throw new RuntimeException("Error while loading free ids", e);
-		}
 	}
-	
+
 	protected void writePropIds(MemorySegment segment, long propIds[]) {
 		if (propIds == null) {
 			return;
@@ -119,50 +105,19 @@ public class AbstractGraphStorage extends AbstractElementStorage implements Elem
 
 	@Override
 	public void delete(GraphUUID uuid) throws IOException {
-		// Calculate the offset
-		long offset = uuid.offset();
-		if (offset > raFile.length()) {
-			return;
-		}
+		try (FileChannel fc = FileChannel.open(path, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
 
-		// Map the memory segment
-		FileChannel fc = raFile.getChannel();
-		MemorySegment memorySegment = fc.map(MapMode.READ_WRITE, offset, layout.byteSize(), arena);
-		layout.varHandle(MemoryLayout.PathElement.groupElement(FREE_KEY)).set(memorySegment, 0, true);
-		freeOffsets.add(uuid.offset());
-	}
-
-	private long loadFreeOffsets(MemoryLayout layout) throws IOException {
-		if (raFile.length() == 0) {
-			return HEADER_LAYOUT.byteSize();
-		}
-
-		try (FileChannel fc = raFile.getChannel()) {
-			long lastOffset = HEADER_LAYOUT.byteSize();
-			for (long offset = HEADER_LAYOUT.byteSize(); offset < raFile.length(); offset += layout.byteSize()) {
-				MemorySegment memorySegment = fc.map(MapMode.READ_ONLY, offset, layout.byteSize(), arena);
-				boolean free = (boolean) layout.varHandle(MemoryLayout.PathElement.groupElement(FREE_KEY)).get(memorySegment, 0);
-				lastOffset = offset / layout.byteSize();
-				if (free) {
-					freeOffsets.add(lastOffset);
-				}
+			// Calculate the offset
+			long offset = uuid.offset();
+			if (offset > fc.size()) {
+				return;
 			}
-			return lastOffset;
-		}
-	}
 
-	@Override
-	public long nextOffset() {
-		if (freeOffsets.isEmpty()) {
-			return offsetProvider.get();
-		} else {
-			return freeOffsets.pop();
+			// Map the memory segment
+			MemorySegment memorySegment = fc.map(MapMode.READ_WRITE, offset, layout.byteSize(), arena);
+			layout.varHandle(MemoryLayout.PathElement.groupElement(FREE_KEY)).set(memorySegment, 0, true);
+			offsetProvider().add(uuid.offset());
 		}
-	}
-
-	@Override
-	public Deque<Long> getFreeIds() {
-		return freeOffsets;
 	}
 
 }

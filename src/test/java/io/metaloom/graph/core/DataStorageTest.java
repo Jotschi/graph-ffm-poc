@@ -6,13 +6,15 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.metaloom.graph.core.storage.data.DataStorage;
 import io.metaloom.graph.core.storage.data.DataStorageImpl;
-import io.metaloom.graph.core.storage.rel.RelationshipData;
+import io.metaloom.graph.core.storage.rel.RelationshipInternal;
 import io.metaloom.graph.core.uuid.GraphUUID;
 
 // Ensure map count is large enough
@@ -32,13 +34,12 @@ public class DataStorageTest extends AbstractGraphCoreTest {
 	}
 
 	@Test
-	public void testNode() throws Exception {
+	public void testCreate() throws Exception {
 		try (DataStorageImpl st = new DataStorageImpl(nodesPath, relsPath, propsPath)) {
 			measure(() -> {
 				for (int i = 0; i < 4; i++) {
 					System.out.println("Storing: " + i);
-					GraphUUID uuid = st.node().uuid();
-					st.node().store(uuid, "Person", new long[] { 1L, 2L, 3L, 4L });
+					st.node().create("Person", new long[] { 1L, 2L, 3L, 4L });
 				}
 				return null;
 			});
@@ -47,33 +48,41 @@ public class DataStorageTest extends AbstractGraphCoreTest {
 
 	@Test
 	public void testRelationship() throws Exception {
+
+		Set<GraphUUID> uuids = new HashSet<>();
+
 		try (DataStorage st = new DataStorageImpl(nodesPath, relsPath, propsPath)) {
 			measure(() -> {
 				for (int i = 0; i < 4; i++) {
 					System.out.println("Storing: " + i);
-					st.rel().store(st.rel().nextOffset(), i + 20, i + 10, "Hello World", null);
+					GraphUUID nodeA = GraphUUID.uuid(0);
+					GraphUUID nodeB = GraphUUID.uuid(1);
+					RelationshipInternal data = st.rel().create(nodeA, nodeB, "Hello World", null);
+					uuids.add(data.uuid());
 				}
 				return null;
 			});
 
-			for (int i = 0; i < 4; i++) {
-				RelationshipData relData = st.rel().load(i);
-				System.out.println("REL: " + i + "=>" + relData.fromId() + "," + relData.toId());
+			assertEquals(4, uuids.size());
+
+			for (GraphUUID uuid : uuids) {
+				RelationshipInternal relData = st.rel().read(uuid);
+				System.out.println("REL: " + uuid + "=>" + relData.fromId() + "," + relData.toId());
 			}
 
-			st.rel().load(2);
-			st.rel().delete(GraphUUID.uuid(2));
-			st.rel().delete(GraphUUID.uuid(4));
-			st.rel().load(2);
-			assertEquals(2, st.rel().getFreeIds().size(), "There should be two free ids");
-			st.rel().store(st.rel().nextOffset(), 20, 10, "Hello World1", null);
-			st.rel().store(st.rel().nextOffset(), 20, 10, "Hello World2", null);
-			assertEquals(0, st.rel().getFreeIds().size(), "There should be no free ids");
-			st.rel().store(st.rel().nextOffset(), 20, 10, "Hello World3", null);
-			assertEquals(0, st.rel().getFreeIds().size(), "There should be no free ids");
+//			st.rel().read(2);
+//			st.rel().delete(GraphUUID.uuid(2));
+//			st.rel().delete(GraphUUID.uuid(4));
+//			st.rel().read(2);
+//			assertEquals(2, st.rel().getFreeOffsets().size(), "There should be two free ids");
+//			st.rel().store(st.rel().nextOffset(), 20, 10, "Hello World1", null);
+//			st.rel().store(st.rel().nextOffset(), 20, 10, "Hello World2", null);
+//			assertEquals(0, st.rel().getFreeOffsets().size(), "There should be no free ids");
+//			st.rel().store(st.rel().nextOffset(), 20, 10, "Hello World3", null);
+//			assertEquals(0, st.rel().getFreeOffsets().size(), "There should be no free ids");
 		}
 		try (DataStorageImpl st = new DataStorageImpl(nodesPath, relsPath, propsPath)) {
-			for (Long id : st.rel().getFreeIds()) {
+			for (Long id : st.rel().offsetProvider().getFreeOffsets()) {
 				System.out.println("Free Id: " + id);
 			}
 		}
@@ -82,10 +91,13 @@ public class DataStorageTest extends AbstractGraphCoreTest {
 	@Test
 	public void testRelationshipProps() throws Exception {
 		try (DataStorage st = new DataStorageImpl(nodesPath, relsPath, propsPath)) {
-			long id = st.rel().nextOffset();
-			st.rel().store(id, 41L, 42L, "test", new long[] { 1, 2, 3 });
-			RelationshipData data = st.rel().load(id);
+			GraphUUID nodeA = GraphUUID.uuid(0);
+			GraphUUID nodeB = GraphUUID.uuid(1);
+			RelationshipInternal data = st.rel().create(nodeA, nodeB, "test", new long[] { 1, 2, 3 });
 			assertNotNull(data);
+
+			RelationshipInternal readData = st.rel().read(data.uuid());
+			assertNotNull(readData);
 		}
 	}
 

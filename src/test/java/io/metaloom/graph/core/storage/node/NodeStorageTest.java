@@ -1,6 +1,7 @@
 package io.metaloom.graph.core.storage.node;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -10,8 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.metaloom.graph.core.AbstractGraphCoreTest;
-import io.metaloom.graph.core.storage.data.AbstractElementStorage;
-import io.metaloom.graph.core.uuid.GraphUUID;
+import io.metaloom.graph.core.storage.data.FileHeader;
 
 public class NodeStorageTest extends AbstractGraphCoreTest {
 
@@ -23,18 +23,27 @@ public class NodeStorageTest extends AbstractGraphCoreTest {
 	}
 
 	@Test
+	public void testCreate() throws IOException, Exception {
+		try (NodeStorage st = new NodeStorageImpl(path)) {
+			NodeInternal createdNode = st.create("HAS_NAME", null);
+			assertNotNull(createdNode);
+			assertNotNull(createdNode.uuid());
+			assertEquals(FileHeader.HEADER_LAYOUT.byteSize(), createdNode.uuid().offset());
+		}
+	}
+
+	@Test
 	public void testBasics() throws Exception {
-		try (NodeDataStorage st = new NodeDataStorageImpl(path)) {
-			GraphUUID uuid = st.uuid();
-			assertEquals(AbstractElementStorage.HEADER_LAYOUT.byteSize(), uuid.offset());
-			st.store(uuid, "HAS_NAME", null);
+		try (NodeStorage st = new NodeStorageImpl(path)) {
+			NodeInternal createdNode = st.create("HAS_NAME", null);
+			assertEquals(FileHeader.HEADER_LAYOUT.byteSize(), createdNode.uuid().offset());
 
-			NodeData node = st.load(uuid);
-			assertEquals("HAS_NAME", node.label());
-			assertEquals(uuid.toString(), node.uuid().toString(), "The uuids should match");
+			NodeInternal readNode = st.read(createdNode.uuid());
+			assertEquals("HAS_NAME", readNode.label());
+			assertEquals(createdNode.uuid().toString(), readNode.uuid().toString(), "The uuids should match");
 
-			GraphUUID uuid2 = st.uuid();
-			assertEquals(AbstractElementStorage.HEADER_LAYOUT.byteSize() + NodeDataStorageImpl.NODE_LAYOUT.byteSize(), uuid2.offset());
+			long count = st.offsetProvider().getElementCount();
+			assertEquals(1, count);
 		}
 	}
 }

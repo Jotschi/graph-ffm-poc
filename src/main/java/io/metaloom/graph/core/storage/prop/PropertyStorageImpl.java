@@ -12,16 +12,20 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import io.metaloom.graph.core.storage.data.AbstractElementStorage;
+import io.metaloom.graph.core.storage.data.AbstractMMapFileStorage;
+import io.metaloom.graph.core.storage.data.FileHeader;
 
-public class PropertyDataStorageImpl extends AbstractElementStorage implements PropertyDataStorage {
+public class PropertyStorageImpl extends AbstractMMapFileStorage implements PropertyStorage {
 
 	private static long alignment = 7;
 
 	private AtomicLong nextFreeOffset = new AtomicLong();
 
-	public PropertyDataStorageImpl(Path path) throws IOException {
-		super(path, "prop");
+	private FileHeader header;
+
+	public PropertyStorageImpl(Path path) throws IOException {
+		super(path);
+		this.header = new FileHeader(path, "prop");
 	}
 
 	@Override
@@ -47,7 +51,7 @@ public class PropertyDataStorageImpl extends AbstractElementStorage implements P
 
 			// ID + key len + key data + value len + value data + buffer size to avoid bogus grow calls
 			long dataSize = 1 + 1 + key.length() + 1 + value.length() + 512;
-			ensureFileCapacity(fileChannel, 0, dataSize);
+			//ensureFileCapacity(fileChannel, 0, dataSize);
 
 			long fileSize = fileChannel.size() + dataSize;
 			// System.out.println("SIZE: " + fileSize + " requested " + dataSize + " at offset " + offset);

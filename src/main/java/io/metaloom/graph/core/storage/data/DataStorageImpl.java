@@ -3,25 +3,25 @@ package io.metaloom.graph.core.storage.data;
 import java.io.IOException;
 import java.nio.file.Path;
 
-import io.metaloom.graph.core.storage.node.NodeDataStorage;
-import io.metaloom.graph.core.storage.node.NodeDataStorageImpl;
-import io.metaloom.graph.core.storage.prop.PropertyDataStorage;
-import io.metaloom.graph.core.storage.prop.PropertyDataStorageImpl;
-import io.metaloom.graph.core.storage.rel.RelationshipDataStorage;
-import io.metaloom.graph.core.storage.rel.RelationshipDataStorageImpl;
+import io.metaloom.graph.core.storage.node.NodeStorage;
+import io.metaloom.graph.core.storage.node.NodeStorageImpl;
+import io.metaloom.graph.core.storage.prop.PropertyStorage;
+import io.metaloom.graph.core.storage.prop.PropertyStorageImpl;
+import io.metaloom.graph.core.storage.rel.RelationshipStorage;
+import io.metaloom.graph.core.storage.rel.RelationshipStorageImpl;
 
 public class DataStorageImpl implements DataStorage {
 
-	private final RelationshipDataStorageImpl relationshipStorage;
+	private final RelationshipStorageImpl relationshipStorage;
 
-	private final NodeDataStorageImpl nodesStorage;
+	private final NodeStorageImpl nodesStorage;
 
-	private final PropertyDataStorageImpl propertyStorage;
+	private final PropertyStorageImpl propertyStorage;
 
 	public DataStorageImpl(Path nodesPath, Path relsPath, Path propsPath) throws IOException {
-		this.relationshipStorage = new RelationshipDataStorageImpl(relsPath);
-		this.nodesStorage = new NodeDataStorageImpl(nodesPath);
-		this.propertyStorage = new PropertyDataStorageImpl(propsPath);
+		this.relationshipStorage = new RelationshipStorageImpl(relsPath);
+		this.nodesStorage = new NodeStorageImpl(nodesPath);
+		this.propertyStorage = new PropertyStorageImpl(propsPath);
 	}
 
 	public void close() {
@@ -43,17 +43,17 @@ public class DataStorageImpl implements DataStorage {
 	}
 
 	@Override
-	public RelationshipDataStorage rel() {
+	public RelationshipStorage rel() {
 		return relationshipStorage;
 	}
 
 	@Override
-	public NodeDataStorage node() {
+	public NodeStorage node() {
 		return nodesStorage;
 	}
 
 	@Override
-	public PropertyDataStorage prop() {
+	public PropertyStorage prop() {
 		return propertyStorage;
 	}
 }

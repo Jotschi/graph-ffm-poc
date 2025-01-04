@@ -1,20 +1,22 @@
 package io.metaloom.graph.core.storage.data;
 
 import java.io.IOException;
-import java.util.Deque;
 
 import io.metaloom.graph.core.uuid.GraphUUID;
 
-public interface ElementStorage extends AutoCloseable {
+/**
+ * 
+ * @param <T>
+ *            Return type
+ */
+public interface ElementStorage<T> extends AutoCloseable {
 
-	Deque<Long> getFreeIds();
+	FileHeader header();
+
+	OffsetProvider offsetProvider();
+
+	T read(GraphUUID uuid) throws IOException;
 
 	void delete(GraphUUID uuid) throws IOException;
 
-	/**
-	 * Return a free id for a new element.
-	 * 
-	 * @return
-	 */
-	long nextOffset();
 }

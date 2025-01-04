@@ -9,8 +9,8 @@ import io.metaloom.graph.core.element.Node;
 import io.metaloom.graph.core.element.Relationship;
 import io.metaloom.graph.core.element.impl.NodeImpl;
 import io.metaloom.graph.core.element.impl.RelationshipImpl;
-import io.metaloom.graph.core.storage.node.NodeData;
-import io.metaloom.graph.core.storage.rel.RelationshipData;
+import io.metaloom.graph.core.storage.node.NodeInternal;
+import io.metaloom.graph.core.storage.rel.RelationshipInternal;
 import io.metaloom.graph.core.uuid.GraphUUID;
 
 public class GraphStorageImpl implements GraphStorage {
@@ -38,70 +38,69 @@ public class GraphStorageImpl implements GraphStorage {
 	}
 
 	@Override
-	public Relationship loadRelationship(long id) throws IOException {
-		RelationshipData relData = data.rel().load(id);
+	public Relationship readRelationship(GraphUUID uuid) throws IOException {
+		RelationshipInternal relData = data.rel().read(uuid);
 
 		// FROM
-		long fromId = relData.fromId();
-		GraphUUID fromUuid = GraphUUID.uuid(fromId);
-		NodeData fromData = data.node().load(fromUuid);
+		GraphUUID fromUuid = relData.fromId();
+		NodeInternal fromData = data.node().read(fromUuid);
 		Node from = new NodeImpl(fromData.label());
 		from.putAll(data.prop().getAll(fromData.propIds()));
-		from.setId(fromId);
+		from.setUuid(fromUuid);
 
 		// TO
-		long toId = relData.toId();
-		GraphUUID toUuid = GraphUUID.uuid(toId);
-		NodeData toData = data.node().load(toUuid);
+		GraphUUID toUuid = relData.toId();
+		NodeInternal toData = data.node().read(toUuid);
 		Node to = new NodeImpl(toData.label());
 		to.putAll(data.prop().getAll(toData.propIds()));
-		to.setId(toId);
+		to.setUuid(toUuid);
 
 		// REL
 		String label = relData.label();
-		RelationshipImpl rel = new RelationshipImpl(from, label, to);
-		rel.setId(id);
+		Relationship rel = new RelationshipImpl(from, label, to);
+		rel.setUuid(rel.uuid());
 		rel.putAll(data.prop().getAll(relData.propIds()));
 		return rel;
 	}
 
 	@Override
-	public Set<Relationship> loadRelationships(long fromId) throws IOException {
-		long[] relIds = data.rel().loadRelationshipIds(fromId);
+	public Set<Relationship> readRelationships(GraphUUID fromUuid) throws IOException {
+		long[] relIds = data.rel().loadRelationshipIds(fromUuid);
 		Set<Relationship> relationships = new HashSet<>();
 		for (int i = 0; i < relIds.length; i++) {
-			relationships.add(loadRelationship(relIds[i]));
+			long relId = relIds[i];
+			GraphUUID relUuid = GraphUUID.uuid(relId);
+			relationships.add(readRelationship(relUuid));
 		}
 		return relationships;
 	}
 
 	@Override
-	public long store(Relationship rel) throws IOException {
+	public GraphUUID create(Relationship rel) throws IOException {
 		Node nodeA = rel.from();
-		if (nodeA.id() == null) {
-			long id = data.node().nextOffset();
+		// Store Node A
+		if (nodeA.uuid() == null) {
 			long propIds[] = data.prop().store(nodeA.props());
-			GraphUUID uuid = data.node().uuid();
-			data.node().store(uuid, nodeA.label(), propIds);
-			nodeA.setId(id);
+			data.prop().store(nodeA.props());
+			NodeInternal nodeData = data.node().create(nodeA.label(), propIds);
+			nodeA.setUuid(nodeData.uuid());
 		}
+		
+		// Store Node B
 		Node nodeB = rel.to();
-		if (nodeB.id() == null) {
-			long id = data.node().nextOffset();
+		if (nodeB.uuid()== null) {
 			long propIds[] = data.prop().store(nodeB.props());
-			GraphUUID uuid = data.node().uuid();
-			data.node().store(uuid, nodeB.label(), propIds);
-			nodeB.setId(id);
+			NodeInternal nodeData = data.node().create(nodeB.label(), propIds);
+			nodeB.setUuid(nodeData.uuid());
 		}
 
-		if (rel.id() == null) {
+		if (rel.uuid() == null) {
 			String label = rel.label();
-			long id = data.rel().nextOffset();
 			long propIds[] = data.prop().store(rel.props());
-			data.rel().store(id, nodeA.id(), nodeB.id(), label, propIds);
-			rel.setId(id);
+			RelationshipInternal relData = data.rel().create(nodeA.uuid(), nodeB.uuid(), label, propIds);
+			rel.setUuid(relData.uuid());
 		}
 
-		return rel.id();
+		return rel.uuid();
 	}
 }

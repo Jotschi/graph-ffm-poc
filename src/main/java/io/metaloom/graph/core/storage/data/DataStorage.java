@@ -1,15 +1,15 @@
 package io.metaloom.graph.core.storage.data;
 
-import io.metaloom.graph.core.storage.node.NodeDataStorage;
-import io.metaloom.graph.core.storage.prop.PropertyDataStorage;
-import io.metaloom.graph.core.storage.rel.RelationshipDataStorage;
+import io.metaloom.graph.core.storage.node.NodeStorage;
+import io.metaloom.graph.core.storage.prop.PropertyStorage;
+import io.metaloom.graph.core.storage.rel.RelationshipStorage;
 
 public interface DataStorage extends AutoCloseable {
 
-	RelationshipDataStorage rel();
+	RelationshipStorage rel();
 
-	NodeDataStorage node();
+	NodeStorage node();
 
-	PropertyDataStorage prop();
+	PropertyStorage prop();
 
 }

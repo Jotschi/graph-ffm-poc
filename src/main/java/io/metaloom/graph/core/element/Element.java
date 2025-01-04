@@ -2,13 +2,15 @@ package io.metaloom.graph.core.element;
 
 import java.util.Map;
 
+import io.metaloom.graph.core.uuid.GraphUUID;
+
 public interface Element {
 
 	String label();
 
-	Long id();
+	GraphUUID uuid();
 
-	void setId(long id);
+	void setUuid(GraphUUID uuid);
 
 	Map<String, String> props();
 

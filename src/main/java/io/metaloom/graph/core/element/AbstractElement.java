@@ -3,9 +3,11 @@ package io.metaloom.graph.core.element;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.metaloom.graph.core.uuid.GraphUUID;
+
 public class AbstractElement implements Element {
 
-	private Long id;
+	private GraphUUID uuid;
 
 	private final String label;
 
@@ -16,13 +18,13 @@ public class AbstractElement implements Element {
 	}
 
 	@Override
-	public Long id() {
-		return id;
+	public GraphUUID uuid() {
+		return uuid;
 	}
 
 	@Override
-	public void setId(long id) {
-		this.id = id;
+	public void setUuid(GraphUUID uuid) {
+		this.uuid = uuid;
 	}
 
 	@Override

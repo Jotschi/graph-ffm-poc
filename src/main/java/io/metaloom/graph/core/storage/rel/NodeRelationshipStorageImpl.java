@@ -9,8 +9,10 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
 import io.metaloom.graph.core.storage.data.AbstractElementStorage;
+import io.metaloom.graph.core.storage.node.NodeInternal;
+import io.metaloom.graph.core.uuid.GraphUUID;
 
-public class NodeRelationshipStorageImpl extends AbstractElementStorage implements NodeRelationshipStorage {
+public class NodeRelationshipStorageImpl extends AbstractElementStorage<NodeInternal> implements NodeRelationshipStorage {
 
 	private static final String HEADER_FILE_TYPE = "nore";
 
@@ -26,7 +28,7 @@ public class NodeRelationshipStorageImpl extends AbstractElementStorage implemen
 		ValueLayout.JAVA_LONG.withName(REL_OFFSET_KEY));
 
 	public NodeRelationshipStorageImpl(Path path) throws IOException {
-		super(path, HEADER_FILE_TYPE);
+		super(path, HEADER_FILE_TYPE, LAYOUT);
 	}
 
 	public void store() throws IOException {
@@ -35,6 +37,18 @@ public class NodeRelationshipStorageImpl extends AbstractElementStorage implemen
 			// Ensure the file is large enough
 			// ensureFileCapacity(fc, offset, layout);
 		}
+	}
+
+	@Override
+	public NodeInternal read(GraphUUID uuid) throws IOException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void delete(GraphUUID uuid) throws IOException {
+		// TODO Auto-generated method stub
+
 	}
 
 }
