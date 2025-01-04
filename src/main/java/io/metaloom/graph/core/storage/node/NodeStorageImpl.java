@@ -75,13 +75,18 @@ public class NodeStorageImpl extends AbstractGraphStorage<NodeInternal> implemen
 
 			// Check if the file is large enough to even contain the node.
 			if (fc.size() < offset + LAYOUT.byteSize()) {
-				throw new IOException("Relationship not found");
+				logger.debug("Element offset {} with uuid {} is outside of storage file size", offset, uuid);
+				return null;
 			}
 
 			MemorySegment memorySegment = fc.map(MapMode.READ_ONLY, offset, LAYOUT.byteSize(), arena);
 
 			// Get the values
 			boolean free = (boolean) LAYOUT.varHandle(MemoryLayout.PathElement.groupElement(FREE_KEY)).get(memorySegment, 0);
+			if (free) {
+				logger.debug("Found memory segment was maked as free. Thus element data shall not be returned", offset, uuid);
+				return null;
+			}
 			String label = readLabel(memorySegment);
 			long randomValue = (long) LAYOUT.varHandle(MemoryLayout.PathElement.groupElement(RANDOM_UUID_PART_KEY)).get(memorySegment, 0);
 			long[] propIds = readPropIds(memorySegment);

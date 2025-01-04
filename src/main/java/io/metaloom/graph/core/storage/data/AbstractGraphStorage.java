@@ -10,9 +10,14 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.metaloom.graph.core.uuid.GraphUUID;
 
 public abstract class AbstractGraphStorage<T> extends AbstractElementStorage<T> {
+
+	private static final Logger logger = LoggerFactory.getLogger(AbstractGraphStorage.class);
 
 	protected static final String LABEL_KEY = "label";
 
@@ -64,8 +69,6 @@ public abstract class AbstractGraphStorage<T> extends AbstractElementStorage<T> 
 			throw new IllegalArgumentException("Label exceeds " + MAX_LABEL_LEN + " bytes when encoded.");
 		}
 
-		// System.out.println("Writing: " + label);
-
 		// Write the label bytes into the sequence
 		for (int i = 0; i < bytes.length; i++) {
 			labelHandle.set(segment, 0, (long) i, bytes[i]);
@@ -106,10 +109,9 @@ public abstract class AbstractGraphStorage<T> extends AbstractElementStorage<T> 
 	@Override
 	public void delete(GraphUUID uuid) throws IOException {
 		try (FileChannel fc = FileChannel.open(path, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
-
-			// Calculate the offset
 			long offset = uuid.offset();
 			if (offset > fc.size()) {
+				logger.debug("Offset of uuid {} is outside of data file. Element does not exist.", uuid);
 				return;
 			}
 

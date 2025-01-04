@@ -9,11 +9,18 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Objects;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.metaloom.graph.core.storage.data.AbstractGraphStorage;
+import io.metaloom.graph.core.storage.error.ElementStorageException;
 import io.metaloom.graph.core.uuid.GraphUUID;
 
 public class RelationshipStorageImpl extends AbstractGraphStorage<RelationshipInternal> implements RelationshipStorage {
+
+	private static final Logger logger = LoggerFactory.getLogger(RelationshipStorageImpl.class);
 
 	private static final GroupLayout LAYOUT = MemoryLayout.structLayout(
 		ValueLayout.JAVA_LONG.withName("node_a_offset"),
@@ -29,14 +36,14 @@ public class RelationshipStorageImpl extends AbstractGraphStorage<RelationshipIn
 	}
 
 	@Override
-	public RelationshipInternal read(GraphUUID uuid) throws IOException {
-		long offset = uuid.offset();
-
+	public RelationshipInternal read(GraphUUID uuid) throws IOException, ElementStorageException {
 		try (FileChannel fc = FileChannel.open(path, StandardOpenOption.READ)) {
+			long offset = uuid.offset();
 
 			// Check if the file is large enough
 			if (fc.size() < offset + LAYOUT.byteSize()) {
-				throw new IOException("Relationship not found");
+				logger.debug("Element offset {} with uuid {} is outside of storage file size", offset, uuid);
+				return null;
 			}
 
 			MemorySegment memorySegment = fc.map(MapMode.READ_ONLY, offset, LAYOUT.byteSize(), arena);
@@ -45,6 +52,10 @@ public class RelationshipStorageImpl extends AbstractGraphStorage<RelationshipIn
 			long fromId = (long) LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("node_a_offset")).get(memorySegment, 0);
 			long toId = (long) LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("node_b_offset")).get(memorySegment, 0);
 			boolean free = (boolean) LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("free")).get(memorySegment, 0);
+			if (free) {
+				logger.debug("Found memory segment was maked as free. Thus element data shall not be returned", offset, uuid);
+				return null;
+			}
 			String label = readLabel(memorySegment);
 			long[] propIds = readPropIds(memorySegment);
 
@@ -84,7 +95,9 @@ public class RelationshipStorageImpl extends AbstractGraphStorage<RelationshipIn
 	}
 
 	@Override
-	public RelationshipInternal create(GraphUUID nodeA, GraphUUID nodeB, String label, long propIds[]) throws IOException {
+	public RelationshipInternal create(GraphUUID fromNodeUuid, GraphUUID toNodeUuid, String label, long propIds[]) throws IOException {
+		Objects.requireNonNull(fromNodeUuid, "The from node must be specified");
+		Objects.requireNonNull(toNodeUuid, "The to node must be specified");
 
 		// Map the memory segment
 		try (FileChannel fc = FileChannel.open(path, StandardOpenOption.READ, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
@@ -94,14 +107,14 @@ public class RelationshipStorageImpl extends AbstractGraphStorage<RelationshipIn
 			// Set the values
 			MemorySegment memorySegment = fc.map(MapMode.READ_WRITE, offset, LAYOUT.byteSize(), arena);
 			LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("rel_uuid_part")).set(memorySegment, 0, (long) uuid.randomValue());
-			LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("node_a_offset")).set(memorySegment, 0, (long) nodeA.offset());
-			LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("node_b_offset")).set(memorySegment, 0, (long) nodeB.offset());
+			LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("node_a_offset")).set(memorySegment, 0, (long) fromNodeUuid.offset());
+			LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("node_b_offset")).set(memorySegment, 0, (long) toNodeUuid.offset());
 			LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("free")).set(memorySegment, 0, false);
 			writeLabel(memorySegment, label);
 			writePropIds(memorySegment, propIds);
 			fc.force(false);
 
-			return new RelationshipInternal(uuid, nodeA, nodeB, label, propIds);
+			return new RelationshipInternal(uuid, fromNodeUuid, toNodeUuid, label, propIds);
 		}
 	}
 

@@ -11,8 +11,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.metaloom.graph.core.AbstractGraphCoreTest;
-import io.metaloom.graph.core.storage.prop.PropertyStorage;
-import io.metaloom.graph.core.storage.prop.PropertyStorageImpl;
 
 public class PropertyStorageTest extends AbstractGraphCoreTest {
 
