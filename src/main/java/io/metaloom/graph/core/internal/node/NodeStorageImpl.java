@@ -62,6 +62,11 @@ public class NodeStorageImpl extends AbstractGraphStorage<NodeInternal> implemen
 			// Set the values
 			MemorySegment memorySegment = fc.map(MapMode.READ_WRITE, offset, LAYOUT.byteSize(), Arena.ofAuto());
 			LAYOUT.varHandle(MemoryLayout.PathElement.groupElement(RANDOM_UUID_PART_KEY)).set(memorySegment, 0, (long) uuid.randomValue());
+
+			// TODO set the inital node rel offset
+			// TODO dedice how to interact with NodeRelationshipStorage
+			LAYOUT.varHandle(MemoryLayout.PathElement.groupElement(NODE_REL_START_OFFSET_KEY)).set(memorySegment, 0, (long) 0L);
+
 			LAYOUT.varHandle(MemoryLayout.PathElement.groupElement(FREE_KEY)).set(memorySegment, 0, false);
 			writeLabel(memorySegment, label);
 			writePropIds(memorySegment, propIds);

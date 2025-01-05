@@ -23,12 +23,13 @@ public interface GraphStorage extends AutoCloseable {
 	Relationship readRelationship(GraphUUID uuid) throws IOException;
 
 	/**
-	 * Load all relationships for the given from nodeUuid.
+	 * Traverse the relationships for the given node from nodeUuid.
 	 * 
 	 * @param nodeUuid
+	 * @param maxDepth
 	 * @return
 	 */
-	Set<Relationship> readRelationships(GraphUUID nodeUuid) throws IOException;
+	Set<Relationship> traverse(GraphUUID nodeUuid, int maxDepth) throws IOException;
 
 	Node readNode(GraphUUID uuid) throws IOException;
 

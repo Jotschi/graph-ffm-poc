@@ -7,9 +7,9 @@ import io.metaloom.graph.core.uuid.GraphUUID;
 
 public interface RelationshipStorage extends ElementStorage<RelationshipInternal> {
 
-	RelationshipInternal create(GraphUUID fromNodeUuid, GraphUUID toNodeUuid, String label, long propIds[]) throws IOException;
+	RelationshipInternal create(GraphUUID fromNodeUuid, String label, GraphUUID toNodeUuid, long propIds[]) throws IOException;
 
-	void update(GraphUUID uuid, GraphUUID fromNodeUuid, GraphUUID toNodeUuid, String label, long propIds[]) throws IOException;
+	void update(GraphUUID uuid, GraphUUID fromNodeUuid, String label, GraphUUID toNodeUuid, long propIds[]) throws IOException;
 
 	long[] loadRelationshipIds(GraphUUID fromUuid);
 

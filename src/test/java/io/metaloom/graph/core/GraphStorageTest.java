@@ -133,7 +133,7 @@ public class GraphStorageTest extends AbstractGraphCoreTest {
 					}
 
 					Node loadedNode = st.readNode(uuid);
-					//assertNode(loadedNode);
+					// assertNode(loadedNode);
 					if (i % 100 == 0) {
 						System.out.println("Checked " + i);
 					}
@@ -143,15 +143,49 @@ public class GraphStorageTest extends AbstractGraphCoreTest {
 
 		try (GraphStorage st = new GraphStorageImpl(basePath)) {
 			Node node = st.readNode(firstUuid.get());
-			//assertRelationship(rel);
+			// assertRelationship(rel);
 		}
 	}
 
 	@Test
 	public void testTraverse() throws FileNotFoundException, Exception {
 		try (GraphStorage st = new GraphStorageImpl(basePath)) {
-			// st.loadRelationships(0);
+			GraphUUID rootUuid = setupGraph(st, 4, 2);
+			st.traverse(rootUuid, 2);
 		}
+	}
+
+	private GraphUUID setupGraph(GraphStorage st, int width, int depth) throws IOException {
+
+		Node root = new NodeImpl("Root");
+		root.set("name", "Root");
+		GraphUUID rootUuid = st.create(root);
+
+		System.out.println("Root: " + rootUuid);
+		setupGraph(st, rootUuid, width, depth);
+		return rootUuid;
+	}
+
+	private void setupGraph(GraphStorage st, GraphUUID rootUuid, int width, int depth) throws IOException {
+		if (depth <= 0) {
+			return;
+		}
+		depth--;
+		for (int i = 0; i < width; i++) {
+			Node node = new NodeImpl("Node");
+			String name = "node_" + i + "_level_" + depth;
+			System.out.println("Creating " + name + " for " + rootUuid);
+			node.set("name", name);
+
+			GraphUUID nodeUuid = st.create(node);
+
+			Relationship rel = new RelationshipImpl(rootUuid, "HAS", nodeUuid);
+			rel.set("name", "relName");
+
+			GraphUUID uuid = st.create(rel);
+			setupGraph(st, nodeUuid, width, depth);
+		}
+
 	}
 
 	private void assertRelationship(Relationship loadedRel) {
@@ -177,6 +211,5 @@ public class GraphStorageTest extends AbstractGraphCoreTest {
 		assertEquals("VW Beetle", to.get("name"));
 		assertNotNull(to.uuid());
 		assertEquals("Vehicle", to.label());
-
 	}
 }

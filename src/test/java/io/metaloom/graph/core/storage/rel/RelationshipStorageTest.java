@@ -33,7 +33,7 @@ public class RelationshipStorageTest extends AbstractElementStorageTest {
 		try (RelationshipStorage st = new RelationshipStorageImpl(path)) {
 			GraphUUID nodeA = GraphUUID.uuid(0L);
 			GraphUUID nodeB = GraphUUID.uuid(1L);
-			RelationshipInternal data = st.create(nodeA, nodeB, "HAS_NAME", null);
+			RelationshipInternal data = st.create(nodeA, "HAS_NAME", nodeB, null);
 			assertNotNull(data);
 		}
 	}
@@ -44,7 +44,7 @@ public class RelationshipStorageTest extends AbstractElementStorageTest {
 		try (RelationshipStorage st = new RelationshipStorageImpl(path)) {
 			GraphUUID nodeA = GraphUUID.uuid(0L);
 			GraphUUID nodeB = GraphUUID.uuid(1L);
-			RelationshipInternal data = st.create(nodeA, nodeB, "HAS_NAME", null);
+			RelationshipInternal data = st.create(nodeA, "HAS_NAME", nodeB, null);
 			assertNotNull(data);
 
 			st.delete(data.uuid());
@@ -59,7 +59,7 @@ public class RelationshipStorageTest extends AbstractElementStorageTest {
 		try (RelationshipStorage st = new RelationshipStorageImpl(path)) {
 			GraphUUID nodeA = GraphUUID.uuid(0L);
 			GraphUUID nodeB = GraphUUID.uuid(1L);
-			RelationshipInternal data = st.create(nodeA, nodeB, "HAS_NAME", null);
+			RelationshipInternal data = st.create(nodeA, "HAS_NAME", nodeB, null);
 			assertNotNull(data);
 
 			RelationshipInternal readData = st.read(data.uuid());
@@ -75,12 +75,12 @@ public class RelationshipStorageTest extends AbstractElementStorageTest {
 			// Create Relationship
 			GraphUUID nodeA = GraphUUID.uuid(0L);
 			GraphUUID nodeB = GraphUUID.uuid(1L);
-			RelationshipInternal data = st.create(nodeA, nodeB, "HAS_NAME", null);
+			RelationshipInternal data = st.create(nodeA, "HAS_NAME", nodeB, null);
 			GraphUUID uuid = data.uuid();
 			assertEquals(FileHeader.HEADER_LAYOUT.byteSize(), uuid.offset());
 
 			// Update Relationship
-			st.update(uuid, nodeA, nodeB, "HAS_NAME", null);
+			st.update(uuid, nodeA, "HAS_NAME", nodeB, null);
 
 			// Read Relationship
 			RelationshipInternal readData = st.read(uuid);

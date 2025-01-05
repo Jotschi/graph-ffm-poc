@@ -57,7 +57,7 @@ public class DataStorageTest extends AbstractGraphCoreTest {
 					System.out.println("Storing: " + i);
 					GraphUUID nodeA = GraphUUID.uuid(0);
 					GraphUUID nodeB = GraphUUID.uuid(1);
-					RelationshipInternal data = st.rel().create(nodeA, nodeB, "Hello World", null);
+					RelationshipInternal data = st.rel().create(nodeA, "Hello World", nodeB, null);
 					uuids.add(data.uuid());
 				}
 				return null;
@@ -93,7 +93,7 @@ public class DataStorageTest extends AbstractGraphCoreTest {
 		try (InternalStorage st = new InternalStorageImpl(nodesPath, relsPath, propsPath)) {
 			GraphUUID nodeA = GraphUUID.uuid(0);
 			GraphUUID nodeB = GraphUUID.uuid(1);
-			RelationshipInternal data = st.rel().create(nodeA, nodeB, "test", new long[] { 1, 2, 3 });
+			RelationshipInternal data = st.rel().create(nodeA, "test", nodeB, new long[] { 1, 2, 3 });
 			assertNotNull(data);
 
 			RelationshipInternal readData = st.rel().read(data.uuid());

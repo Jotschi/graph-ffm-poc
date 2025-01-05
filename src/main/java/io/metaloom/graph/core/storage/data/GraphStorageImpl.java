@@ -77,7 +77,7 @@ public class GraphStorageImpl implements GraphStorage {
 	}
 
 	@Override
-	public Set<Relationship> readRelationships(GraphUUID fromUuid) throws IOException {
+	public Set<Relationship> traverse(GraphUUID fromUuid, int maxDepth) throws IOException {
 		long[] relIds = data.rel().loadRelationshipIds(fromUuid);
 		Set<Relationship> relationships = new HashSet<>();
 		for (int i = 0; i < relIds.length; i++) {
@@ -99,27 +99,27 @@ public class GraphStorageImpl implements GraphStorage {
 
 	@Override
 	public GraphUUID create(Relationship rel) throws IOException {
-		Node nodeA = rel.from();
-		// Store Node A
-		if (nodeA.uuid() == null) {
-			long propIds[] = data.prop().store(nodeA.props());
-			data.prop().store(nodeA.props());
-			NodeInternal nodeData = data.node().create(nodeA.label(), propIds);
-			nodeA.setUuid(nodeData.uuid());
-		}
-
-		// Store Node B
-		Node nodeB = rel.to();
-		if (nodeB.uuid() == null) {
-			long propIds[] = data.prop().store(nodeB.props());
-			NodeInternal nodeData = data.node().create(nodeB.label(), propIds);
-			nodeB.setUuid(nodeData.uuid());
-		}
+		// Node nodeA = rel.from();
+		// // Store Node A
+		// if (nodeA.uuid() == null) {
+		// long propIds[] = data.prop().store(nodeA.props());
+		// data.prop().store(nodeA.props());
+		// NodeInternal nodeData = data.node().create(nodeA.label(), propIds);
+		// nodeA.setUuid(nodeData.uuid());
+		// }
+		//
+		// // Store Node B
+		// Node nodeB = rel.to();
+		// if (nodeB.uuid() == null) {
+		// long propIds[] = data.prop().store(nodeB.props());
+		// NodeInternal nodeData = data.node().create(nodeB.label(), propIds);
+		// nodeB.setUuid(nodeData.uuid());
+		// }
 
 		if (rel.uuid() == null) {
 			String label = rel.label();
 			long propIds[] = data.prop().store(rel.props());
-			RelationshipInternal relData = data.rel().create(nodeA.uuid(), nodeB.uuid(), label, propIds);
+			RelationshipInternal relData = data.rel().create(rel.fromUuid(), label, rel.toUuid(), propIds);
 			rel.setUuid(relData.uuid());
 		}
 

@@ -31,7 +31,7 @@ public class NodeRelationshipStorageImpl extends AbstractElementStorage<NodeInte
 		super(path, HEADER_FILE_TYPE, LAYOUT);
 	}
 
-	public void store() throws IOException {
+	public void create(long nodeOffset, long relOffset) throws IOException {
 		try (FileChannel fc = FileChannel.open(path, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
 
 			// Ensure the file is large enough

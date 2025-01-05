@@ -70,7 +70,7 @@ public class RelationshipStorageImpl extends AbstractGraphStorage<RelationshipIn
 	}
 
 	@Override
-	public void update(GraphUUID uuid, GraphUUID nodeA, GraphUUID nodeB, String label, long[] propIds) throws IOException {
+	public void update(GraphUUID uuid, GraphUUID nodeA, String label, GraphUUID nodeB, long[] propIds) throws IOException {
 
 		try (FileChannel fc = FileChannel.open(path, StandardOpenOption.READ, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
 			long offset = uuid.offset();
@@ -96,9 +96,9 @@ public class RelationshipStorageImpl extends AbstractGraphStorage<RelationshipIn
 	}
 
 	@Override
-	public RelationshipInternal create(GraphUUID fromNodeUuid, GraphUUID toNodeUuid, String label, long propIds[]) throws IOException {
-		Objects.requireNonNull(fromNodeUuid, "The from node must be specified");
-		Objects.requireNonNull(toNodeUuid, "The to node must be specified");
+	public RelationshipInternal create(GraphUUID fromNodeUuid, String label, GraphUUID toNodeUuid, long propIds[]) throws IOException {
+		Objects.requireNonNull(fromNodeUuid, "The from node UUID must be specified.");
+		Objects.requireNonNull(toNodeUuid, "The to node UUID must be specified.");
 
 		// Map the memory segment
 		try (FileChannel fc = FileChannel.open(path, StandardOpenOption.READ, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
