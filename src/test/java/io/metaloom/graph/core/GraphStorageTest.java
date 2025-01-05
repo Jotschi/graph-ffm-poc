@@ -22,6 +22,11 @@ import io.metaloom.graph.core.storage.data.GraphStorage;
 import io.metaloom.graph.core.storage.data.GraphStorageImpl;
 import io.metaloom.graph.core.uuid.GraphUUID;
 
+/**
+ * Ensure that the map count sysctl parameter has been set to the required size.
+ * 
+ * sysctl -w vm.max_map_count=13107290
+ */
 public class GraphStorageTest extends AbstractGraphCoreTest {
 
 	private Path basePath = Paths.get("target", "graphstorage-test");
@@ -33,62 +38,7 @@ public class GraphStorageTest extends AbstractGraphCoreTest {
 	}
 
 	@Test
-	public void testBasics() throws FileNotFoundException, Exception {
-		try (GraphStorage st = new GraphStorageImpl(basePath)) {
-			Node nodeA = new NodeImpl("Person");
-			nodeA.set("name", "Wes Anderson");
-
-			Node nodeB = new NodeImpl("Vehicle");
-			nodeB.set("name", "VW Beetle");
-
-			Relationship rel = new RelationshipImpl(nodeA, "HAS_RELATIONSHIP", nodeB);
-			rel.set("name", "relName");
-
-			GraphUUID uuid = st.create(rel);
-
-			Relationship loadedRel = st.readRelationship(uuid);
-			assertRelationship(loadedRel);
-		}
-	}
-
-	@Test
-	public void testBulk() throws FileNotFoundException, Exception {
-
-		AtomicReference<GraphUUID> firstUuid = new AtomicReference<>();
-
-		try (GraphStorage st = new GraphStorageImpl(basePath)) {
-			measure(() -> {
-				for (int i = 0; i < 10_000; i++) {
-					Node nodeA = new NodeImpl("Person");
-					nodeA.set("name", "Wes Anderson");
-
-					Node nodeB = new NodeImpl("Vehicle");
-					nodeB.set("name", "VW Beetle");
-
-					Relationship rel = new RelationshipImpl(nodeA, "HAS_RELATIONSHIP", nodeB);
-					rel.set("name", "relName");
-
-					GraphUUID uuid = st.create(rel);
-					if (firstUuid.get() == null) {
-						firstUuid.set(uuid);
-					}
-
-					Relationship loadedRel = st.readRelationship(uuid);
-					assertRelationship(loadedRel);
-				}
-				return null;
-			});
-		}
-
-		try (GraphStorage st = new GraphStorageImpl(basePath)) {
-			Relationship rel = st.readRelationship(firstUuid.get());
-			assertRelationship(rel);
-		}
-	}
-
-	@Test
-	public void testWriteReadFS() throws FileNotFoundException, Exception {
-
+	public void testReadRelationship() throws Exception {
 		GraphUUID uuid = null;
 		try (GraphStorage st = new GraphStorageImpl(basePath)) {
 			Node nodeA = new NodeImpl("Person");
@@ -111,6 +61,89 @@ public class GraphStorageTest extends AbstractGraphCoreTest {
 			Relationship rel = st.readRelationship(uuid);
 			System.out.println(rel);
 			assertRelationship(rel);
+		}
+
+	}
+
+	@Test
+	public void testReadNode() throws Exception {
+		try (GraphStorage st = new GraphStorageImpl(basePath)) {
+			Node node = new NodeImpl("Person");
+			node.set("name", "Joe Doe");
+			GraphUUID uuid = st.create(node);
+
+			Node readNode = st.readNode(uuid);
+			assertNotNull(readNode);
+			assertEquals("Person", readNode.label());
+			assertEquals("Joe Doe", readNode.get("name"));
+		}
+	}
+
+	@Test
+	public void testBulkRelationship() throws FileNotFoundException, Exception {
+
+		AtomicReference<GraphUUID> firstUuid = new AtomicReference<>();
+
+		try (GraphStorage st = new GraphStorageImpl(basePath)) {
+			measure(() -> {
+				for (int i = 0; i < 200_000; i++) {
+					Node nodeA = new NodeImpl("Person");
+					nodeA.set("name", "Wes Anderson");
+
+					Node nodeB = new NodeImpl("Vehicle");
+					nodeB.set("name", "VW Beetle");
+
+					Relationship rel = new RelationshipImpl(nodeA, "OWNS", nodeB);
+					rel.set("name", "relName");
+
+					GraphUUID uuid = st.create(rel);
+					if (firstUuid.get() == null) {
+						firstUuid.set(uuid);
+					}
+
+					Relationship loadedRel = st.readRelationship(uuid);
+					assertRelationship(loadedRel);
+					if (i % 100 == 0) {
+						System.out.println("Checked " + i);
+					}
+				}
+			});
+		}
+
+		try (GraphStorage st = new GraphStorageImpl(basePath)) {
+			Relationship rel = st.readRelationship(firstUuid.get());
+			assertRelationship(rel);
+		}
+	}
+
+	@Test
+	public void testBulkNode() throws FileNotFoundException, Exception {
+
+		AtomicReference<GraphUUID> firstUuid = new AtomicReference<>();
+
+		try (GraphStorage st = new GraphStorageImpl(basePath)) {
+			measure(() -> {
+				for (int i = 0; i < 10_000; i++) {
+					Node node = new NodeImpl("Person");
+					node.set("name", "Wes Anderson");
+
+					GraphUUID uuid = st.create(node);
+					if (firstUuid.get() == null) {
+						firstUuid.set(uuid);
+					}
+
+					Node loadedNode = st.readNode(uuid);
+					//assertNode(loadedNode);
+					if (i % 100 == 0) {
+						System.out.println("Checked " + i);
+					}
+				}
+			});
+		}
+
+		try (GraphStorage st = new GraphStorageImpl(basePath)) {
+			Node node = st.readNode(firstUuid.get());
+			//assertRelationship(rel);
 		}
 	}
 

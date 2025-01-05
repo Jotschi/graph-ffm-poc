@@ -1,4 +1,4 @@
-package io.metaloom.graph.core.storage.node;
+package io.metaloom.graph.core.internal.node;
 
 import io.metaloom.graph.core.uuid.GraphUUID;
 

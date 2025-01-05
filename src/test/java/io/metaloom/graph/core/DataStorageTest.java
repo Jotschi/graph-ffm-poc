@@ -12,9 +12,9 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import io.metaloom.graph.core.storage.data.DataStorage;
-import io.metaloom.graph.core.storage.data.DataStorageImpl;
-import io.metaloom.graph.core.storage.rel.RelationshipInternal;
+import io.metaloom.graph.core.internal.InternalStorage;
+import io.metaloom.graph.core.internal.InternalStorageImpl;
+import io.metaloom.graph.core.internal.rel.RelationshipInternal;
 import io.metaloom.graph.core.uuid.GraphUUID;
 
 // Ensure map count is large enough
@@ -35,7 +35,7 @@ public class DataStorageTest extends AbstractGraphCoreTest {
 
 	@Test
 	public void testCreate() throws Exception {
-		try (DataStorageImpl st = new DataStorageImpl(nodesPath, relsPath, propsPath)) {
+		try (InternalStorageImpl st = new InternalStorageImpl(nodesPath, relsPath, propsPath)) {
 			measure(() -> {
 				for (int i = 0; i < 4; i++) {
 					System.out.println("Storing: " + i);
@@ -51,7 +51,7 @@ public class DataStorageTest extends AbstractGraphCoreTest {
 
 		Set<GraphUUID> uuids = new HashSet<>();
 
-		try (DataStorage st = new DataStorageImpl(nodesPath, relsPath, propsPath)) {
+		try (InternalStorage st = new InternalStorageImpl(nodesPath, relsPath, propsPath)) {
 			measure(() -> {
 				for (int i = 0; i < 4; i++) {
 					System.out.println("Storing: " + i);
@@ -81,7 +81,7 @@ public class DataStorageTest extends AbstractGraphCoreTest {
 //			st.rel().store(st.rel().nextOffset(), 20, 10, "Hello World3", null);
 //			assertEquals(0, st.rel().getFreeOffsets().size(), "There should be no free ids");
 		}
-		try (DataStorageImpl st = new DataStorageImpl(nodesPath, relsPath, propsPath)) {
+		try (InternalStorageImpl st = new InternalStorageImpl(nodesPath, relsPath, propsPath)) {
 			for (Long id : st.rel().offsetProvider().getFreeOffsets()) {
 				System.out.println("Free Id: " + id);
 			}
@@ -90,7 +90,7 @@ public class DataStorageTest extends AbstractGraphCoreTest {
 
 	@Test
 	public void testRelationshipProps() throws Exception {
-		try (DataStorage st = new DataStorageImpl(nodesPath, relsPath, propsPath)) {
+		try (InternalStorage st = new InternalStorageImpl(nodesPath, relsPath, propsPath)) {
 			GraphUUID nodeA = GraphUUID.uuid(0);
 			GraphUUID nodeB = GraphUUID.uuid(1);
 			RelationshipInternal data = st.rel().create(nodeA, nodeB, "test", new long[] { 1, 2, 3 });

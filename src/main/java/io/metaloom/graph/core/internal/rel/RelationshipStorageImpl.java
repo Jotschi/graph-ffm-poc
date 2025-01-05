@@ -1,6 +1,7 @@
-package io.metaloom.graph.core.storage.rel;
+package io.metaloom.graph.core.internal.rel;
 
 import java.io.IOException;
+import java.lang.foreign.Arena;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
@@ -14,7 +15,7 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.metaloom.graph.core.storage.data.AbstractGraphStorage;
+import io.metaloom.graph.core.internal.AbstractGraphStorage;
 import io.metaloom.graph.core.storage.error.ElementStorageException;
 import io.metaloom.graph.core.uuid.GraphUUID;
 
@@ -46,7 +47,7 @@ public class RelationshipStorageImpl extends AbstractGraphStorage<RelationshipIn
 				return null;
 			}
 
-			MemorySegment memorySegment = fc.map(MapMode.READ_ONLY, offset, LAYOUT.byteSize(), arena);
+			MemorySegment memorySegment = fc.map(MapMode.READ_ONLY, offset, LAYOUT.byteSize(), Arena.ofAuto());
 
 			// Get the values
 			long fromId = (long) LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("node_a_offset")).get(memorySegment, 0);
@@ -60,7 +61,7 @@ public class RelationshipStorageImpl extends AbstractGraphStorage<RelationshipIn
 			long[] propIds = readPropIds(memorySegment);
 
 			// System.out.println("Free: " + free);
-			fc.force(false);
+			//fc.force(false);
 			GraphUUID fromUuid = GraphUUID.uuid(fromId);
 			GraphUUID toUuid = GraphUUID.uuid(toId);
 			return new RelationshipInternal(uuid, fromUuid, toUuid, label, propIds);
@@ -75,14 +76,14 @@ public class RelationshipStorageImpl extends AbstractGraphStorage<RelationshipIn
 			long offset = uuid.offset();
 
 			// Set the values
-			MemorySegment memorySegment = fc.map(MapMode.READ_WRITE, offset, LAYOUT.byteSize(), arena);
+			MemorySegment memorySegment = fc.map(MapMode.READ_WRITE, offset, LAYOUT.byteSize(), Arena.ofAuto());
 			LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("rel_uuid_part")).set(memorySegment, 0, (long) uuid.randomValue());
 			LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("node_a_offset")).set(memorySegment, 0, (long) nodeA.offset());
 			LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("node_b_offset")).set(memorySegment, 0, (long) nodeB.offset());
 			LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("free")).set(memorySegment, 0, false);
 			writeLabel(memorySegment, label);
 			writePropIds(memorySegment, propIds);
-			fc.force(false);
+			//fc.force(false);
 		}
 	}
 
@@ -105,14 +106,14 @@ public class RelationshipStorageImpl extends AbstractGraphStorage<RelationshipIn
 			GraphUUID uuid = GraphUUID.uuid(offset);
 
 			// Set the values
-			MemorySegment memorySegment = fc.map(MapMode.READ_WRITE, offset, LAYOUT.byteSize(), arena);
+			MemorySegment memorySegment = fc.map(MapMode.READ_WRITE, offset, LAYOUT.byteSize(), Arena.ofAuto());
 			LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("rel_uuid_part")).set(memorySegment, 0, (long) uuid.randomValue());
 			LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("node_a_offset")).set(memorySegment, 0, (long) fromNodeUuid.offset());
 			LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("node_b_offset")).set(memorySegment, 0, (long) toNodeUuid.offset());
 			LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("free")).set(memorySegment, 0, false);
 			writeLabel(memorySegment, label);
 			writePropIds(memorySegment, propIds);
-			fc.force(false);
+			//fc.force(false);
 
 			return new RelationshipInternal(uuid, fromNodeUuid, toNodeUuid, label, propIds);
 		}

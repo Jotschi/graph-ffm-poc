@@ -1,6 +1,7 @@
-package io.metaloom.graph.core.storage.prop;
+package io.metaloom.graph.core.internal.prop;
 
 import java.io.IOException;
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.channels.FileChannel;
@@ -12,8 +13,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-import io.metaloom.graph.core.storage.data.AbstractMMapFileStorage;
-import io.metaloom.graph.core.storage.data.FileHeader;
+import io.metaloom.graph.core.internal.AbstractMMapFileStorage;
+import io.metaloom.graph.core.internal.FileHeader;
 
 public class PropertyStorageImpl extends AbstractMMapFileStorage implements PropertyStorage {
 
@@ -35,7 +36,7 @@ public class PropertyStorageImpl extends AbstractMMapFileStorage implements Prop
 		try (FileChannel fileChannel = FileChannel.open(path,
 			StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
 
-			MemorySegment segment = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, fileSize, arena);
+			MemorySegment segment = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, fileSize, Arena.ofAuto());
 			long offset = id;
 			return readRecord(segment, offset);
 		}
@@ -55,7 +56,7 @@ public class PropertyStorageImpl extends AbstractMMapFileStorage implements Prop
 
 			long fileSize = fileChannel.size() + dataSize;
 			// System.out.println("SIZE: " + fileSize + " requested " + dataSize + " at offset " + offset);
-			MemorySegment segment = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, fileSize, arena);
+			MemorySegment segment = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, fileSize, Arena.ofAuto());
 
 			long nextOffset = writeRecord(segment, offset, 1L, key, value);
 			nextFreeOffset.set(nextOffset);

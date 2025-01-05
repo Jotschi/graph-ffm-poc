@@ -2,7 +2,6 @@ package io.metaloom.graph.core.storage.prop;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,15 +10,32 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.metaloom.graph.core.AbstractGraphCoreTest;
+import io.metaloom.graph.core.internal.prop.PropertyStorage;
+import io.metaloom.graph.core.internal.prop.PropertyStorageImpl;
 
 public class PropertyStorageTest extends AbstractGraphCoreTest {
 
 	private static final String LONG_TEXT = "This is a longer text 12345678";
-	private Path path = Path.of("target", "data.mmap");
+	private Path path = Path.of("target", "properties.mmap");
 
 	@BeforeEach
 	public void setup() throws IOException {
 		Files.deleteIfExists(path);
+	}
+
+	@Test
+	public void testBulk() throws Exception {
+		try (PropertyStorage st = new PropertyStorageImpl(path)) {
+			measure(() -> {
+				for (int i = 0; i < 1_000_000; i++) {
+					st.store("keyA", "value");
+
+					if (i % 100 == 0) {
+						System.out.println(i);
+					}
+				}
+			});
+		}
 	}
 
 	@Test
@@ -32,15 +48,6 @@ public class PropertyStorageTest extends AbstractGraphCoreTest {
 			assertId(st, id, "keyA", "value");
 			assertId(st, id2, "keyB", "valz");
 			assertId(st, id3, "k", LONG_TEXT);
-		}
-	}
-
-	@Test
-	public void testBulk() throws FileNotFoundException, Exception {
-		try (PropertyStorage st = new PropertyStorageImpl(path)) {
-			for (int i = 0; i < 100_000; i++) {
-				st.store("keyA", "value");
-			}
 		}
 	}
 

@@ -1,6 +1,7 @@
-package io.metaloom.graph.core.storage.data;
+package io.metaloom.graph.core.internal;
 
 import java.io.IOException;
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.VarHandle;
@@ -116,7 +117,7 @@ public abstract class AbstractGraphStorage<T> extends AbstractElementStorage<T> 
 			}
 
 			// Map the memory segment
-			MemorySegment memorySegment = fc.map(MapMode.READ_WRITE, offset, layout.byteSize(), arena);
+			MemorySegment memorySegment = fc.map(MapMode.READ_WRITE, offset, layout.byteSize(), Arena.ofAuto());
 			layout.varHandle(MemoryLayout.PathElement.groupElement(FREE_KEY)).set(memorySegment, 0, true);
 			offsetProvider().add(uuid.offset());
 		}

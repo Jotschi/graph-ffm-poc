@@ -12,15 +12,37 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.metaloom.graph.core.AbstractElementStorageTest;
-import io.metaloom.graph.core.storage.data.FileHeader;
+import io.metaloom.graph.core.internal.FileHeader;
+import io.metaloom.graph.core.internal.node.NodeInternal;
+import io.metaloom.graph.core.internal.node.NodeStorage;
+import io.metaloom.graph.core.internal.node.NodeStorageImpl;
 
 public class NodeStorageTest extends AbstractElementStorageTest {
 
-	private Path path = Path.of("target", "data.mmap");
+	private Path path = Path.of("target", "nodes.mmap");
 
 	@BeforeEach
 	public void setup() throws IOException {
 		Files.deleteIfExists(path);
+	}
+
+	@Test
+	public void testBulk() throws Exception {
+		try (NodeStorage st = new NodeStorageImpl(path)) {
+			measure(() -> {
+				for (int i = 0; i < 1_000_000; i++) {
+					NodeInternal createdNode = st.create("HAS_NAME", null);
+					assertNotNull(createdNode);
+
+					NodeInternal readNode = st.read(createdNode.uuid());
+					assertNotNull(readNode);
+
+					if (i % 100 == 0) {
+						System.out.println(i);
+					}
+				}
+			});
+		}
 	}
 
 	@Test

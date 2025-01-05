@@ -1,4 +1,4 @@
-package io.metaloom.graph.core.storage.data;
+package io.metaloom.graph.core.internal;
 
 import java.io.IOException;
 

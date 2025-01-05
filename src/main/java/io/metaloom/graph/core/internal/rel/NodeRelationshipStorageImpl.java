@@ -1,4 +1,4 @@
-package io.metaloom.graph.core.storage.rel;
+package io.metaloom.graph.core.internal.rel;
 
 import java.io.IOException;
 import java.lang.foreign.GroupLayout;
@@ -8,8 +8,8 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 
-import io.metaloom.graph.core.storage.data.AbstractElementStorage;
-import io.metaloom.graph.core.storage.node.NodeInternal;
+import io.metaloom.graph.core.internal.AbstractElementStorage;
+import io.metaloom.graph.core.internal.node.NodeInternal;
 import io.metaloom.graph.core.uuid.GraphUUID;
 
 public class NodeRelationshipStorageImpl extends AbstractElementStorage<NodeInternal> implements NodeRelationshipStorage {

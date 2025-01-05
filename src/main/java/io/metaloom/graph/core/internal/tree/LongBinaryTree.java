@@ -1,4 +1,4 @@
-package io.metaloom.graph.core.storage.tree;
+package io.metaloom.graph.core.internal.tree;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.GroupLayout;

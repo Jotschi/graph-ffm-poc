@@ -8,4 +8,10 @@ public class AbstractGraphCoreTest {
 		System.out.println("Duration: " + (System.currentTimeMillis() - start));
 		return ret;
 	}
+
+	protected void measure(TimeableRunnable runnable) throws Exception {
+		long start = System.currentTimeMillis();
+		runnable.invoke();
+		System.out.println("Duration: " + (System.currentTimeMillis() - start));
+	}
 }

@@ -12,7 +12,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.metaloom.graph.core.AbstractElementStorageTest;
-import io.metaloom.graph.core.storage.data.FileHeader;
+import io.metaloom.graph.core.internal.FileHeader;
+import io.metaloom.graph.core.internal.rel.RelationshipInternal;
+import io.metaloom.graph.core.internal.rel.RelationshipStorage;
+import io.metaloom.graph.core.internal.rel.RelationshipStorageImpl;
 import io.metaloom.graph.core.uuid.GraphUUID;
 
 public class RelationshipStorageTest extends AbstractElementStorageTest {

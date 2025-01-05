@@ -1,8 +1,8 @@
-package io.metaloom.graph.core.storage.rel;
+package io.metaloom.graph.core.internal.rel;
 
 import java.io.IOException;
 
-import io.metaloom.graph.core.storage.data.ElementStorage;
+import io.metaloom.graph.core.internal.ElementStorage;
 import io.metaloom.graph.core.uuid.GraphUUID;
 
 public interface RelationshipStorage extends ElementStorage<RelationshipInternal> {
