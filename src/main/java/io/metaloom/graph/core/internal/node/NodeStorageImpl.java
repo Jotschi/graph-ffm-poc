@@ -64,7 +64,7 @@ public class NodeStorageImpl extends AbstractGraphStorage<NodeInternal> implemen
 			LAYOUT.varHandle(MemoryLayout.PathElement.groupElement(RANDOM_UUID_PART_KEY)).set(memorySegment, 0, (long) uuid.randomValue());
 
 			// TODO set the inital node rel offset
-			// TODO dedice how to interact with NodeRelationshipStorage
+			// TODO dedice how to interact with NodeRelationshipStorage 
 			LAYOUT.varHandle(MemoryLayout.PathElement.groupElement(NODE_REL_START_OFFSET_KEY)).set(memorySegment, 0, (long) 0L);
 
 			LAYOUT.varHandle(MemoryLayout.PathElement.groupElement(FREE_KEY)).set(memorySegment, 0, false);

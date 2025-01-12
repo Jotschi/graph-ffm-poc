@@ -37,7 +37,7 @@ public class NodeStorageTest extends AbstractElementStorageTest {
 					NodeInternal readNode = st.read(createdNode.uuid());
 					assertNotNull(readNode);
 
-					if (i % 100 == 0) {
+					if (i % 1000 == 0) {
 						System.out.println(i);
 					}
 				}
