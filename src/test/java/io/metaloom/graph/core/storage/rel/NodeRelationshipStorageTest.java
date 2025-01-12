@@ -12,7 +12,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.metaloom.graph.core.AbstractElementStorageTest;
-import io.metaloom.graph.core.internal.FileHeader;
 import io.metaloom.graph.core.internal.rel.NodeRelationshipStorage;
 import io.metaloom.graph.core.internal.rel.NodeRelationshipStorageImpl;
 import io.metaloom.graph.core.internal.rel.RelationshipReferenceInternal;
@@ -38,6 +37,18 @@ public class NodeRelationshipStorageTest extends AbstractElementStorageTest {
 			List<RelationshipReferenceInternal> list = st.load(offset);
 			assertNotNull(list);
 			assertEquals(4, list.size());
+
+			// Delete the last element of the chain
+			st.deleteByRelOffset(offset, 43L);
+
+			list = st.load(offset);
+			assertEquals(3, list.size());
+
+			// Delete the first element of the chain
+			st.deleteByRelOffset(offset, 40L);
+
+			list = st.load(offset);
+			assertEquals(2, list.size());
 		}
 	}
 

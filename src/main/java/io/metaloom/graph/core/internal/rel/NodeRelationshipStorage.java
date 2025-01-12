@@ -15,4 +15,6 @@ public interface NodeRelationshipStorage extends AutoCloseable {
 	 */
 	List<RelationshipReferenceInternal> load(long startOffset) throws IOException;
 
+	void deleteByRelOffset(long startOffset, long relationshipOffset) throws IOException;
+
 }
