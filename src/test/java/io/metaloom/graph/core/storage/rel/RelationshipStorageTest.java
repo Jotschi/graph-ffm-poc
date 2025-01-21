@@ -13,6 +13,8 @@ import org.junit.jupiter.api.Test;
 
 import io.metaloom.graph.core.AbstractElementStorageTest;
 import io.metaloom.graph.core.internal.FileHeader;
+import io.metaloom.graph.core.internal.rel.NodeRelationshipStorage;
+import io.metaloom.graph.core.internal.rel.NodeRelationshipStorageImpl;
 import io.metaloom.graph.core.internal.rel.RelationshipInternal;
 import io.metaloom.graph.core.internal.rel.RelationshipStorage;
 import io.metaloom.graph.core.internal.rel.RelationshipStorageImpl;
@@ -22,15 +24,19 @@ public class RelationshipStorageTest extends AbstractElementStorageTest {
 
 	private Path path = Path.of("target", "rels.mmap");
 
+	private Path nodeRelPath = Path.of("target", "rels.mmap");
+
 	@BeforeEach
 	public void setup() throws IOException {
 		Files.deleteIfExists(path);
+		Files.deleteIfExists(nodeRelPath);
 	}
 
 	@Test
 	@Override
 	public void testCreate() throws Exception {
-		try (RelationshipStorage st = new RelationshipStorageImpl(path)) {
+		try (NodeRelationshipStorage nrs = new NodeRelationshipStorageImpl(nodeRelPath);
+			RelationshipStorage st = new RelationshipStorageImpl(path, nrs)) {
 			GraphUUID nodeA = GraphUUID.uuid(0L);
 			GraphUUID nodeB = GraphUUID.uuid(1L);
 			RelationshipInternal data = st.create(nodeA, "HAS_NAME", nodeB, null);
@@ -41,7 +47,8 @@ public class RelationshipStorageTest extends AbstractElementStorageTest {
 	@Test
 	@Override
 	public void testDelete() throws Exception {
-		try (RelationshipStorage st = new RelationshipStorageImpl(path)) {
+		try (NodeRelationshipStorage nrs = new NodeRelationshipStorageImpl(nodeRelPath);
+			RelationshipStorage st = new RelationshipStorageImpl(path, nrs)) {
 			GraphUUID nodeA = GraphUUID.uuid(0L);
 			GraphUUID nodeB = GraphUUID.uuid(1L);
 			RelationshipInternal data = st.create(nodeA, "HAS_NAME", nodeB, null);
@@ -56,7 +63,8 @@ public class RelationshipStorageTest extends AbstractElementStorageTest {
 	@Test
 	@Override
 	public void testRead() throws Exception {
-		try (RelationshipStorage st = new RelationshipStorageImpl(path)) {
+		try (NodeRelationshipStorage nrs = new NodeRelationshipStorageImpl(nodeRelPath);
+			RelationshipStorage st = new RelationshipStorageImpl(path, nrs)) {
 			GraphUUID nodeA = GraphUUID.uuid(0L);
 			GraphUUID nodeB = GraphUUID.uuid(1L);
 			RelationshipInternal data = st.create(nodeA, "HAS_NAME", nodeB, null);
@@ -70,7 +78,8 @@ public class RelationshipStorageTest extends AbstractElementStorageTest {
 
 	@Test
 	public void testBasics() throws Exception {
-		try (RelationshipStorage st = new RelationshipStorageImpl(path)) {
+		try (NodeRelationshipStorage nrs = new NodeRelationshipStorageImpl(nodeRelPath);
+			RelationshipStorage st = new RelationshipStorageImpl(path, nrs)) {
 
 			// Create Relationship
 			GraphUUID nodeA = GraphUUID.uuid(0L);

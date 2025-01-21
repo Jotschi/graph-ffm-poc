@@ -20,6 +20,8 @@ public class NodeRelationshipStorageTest extends AbstractElementStorageTest {
 
 	private Path path = Path.of("target", "node_rels.mmap");
 
+	public static final long NODE_OFFSET = 42L;
+
 	@BeforeEach
 	public void setup() throws IOException {
 		Files.deleteIfExists(path);
@@ -28,11 +30,10 @@ public class NodeRelationshipStorageTest extends AbstractElementStorageTest {
 	@Test
 	public void testBasics() throws Exception {
 		try (NodeRelationshipStorage st = new NodeRelationshipStorageImpl(path)) {
-			long nodeOffset = 42L;
-			long offset = st.create(-1, 40L, nodeOffset);
-			st.create(offset, 41L, nodeOffset);
-			st.create(offset, 42L, nodeOffset);
-			st.create(offset, 43L, nodeOffset);
+			long offset = st.create(-1, 40L, NODE_OFFSET);
+			st.create(offset, 41L, NODE_OFFSET);
+			st.create(offset, 42L, NODE_OFFSET);
+			st.create(offset, 43L, NODE_OFFSET);
 
 			List<RelationshipReferenceInternal> list = st.load(offset);
 			assertNotNull(list);
@@ -56,6 +57,8 @@ public class NodeRelationshipStorageTest extends AbstractElementStorageTest {
 	@Override
 	public void testCreate() throws Exception {
 		try (NodeRelationshipStorage st = new NodeRelationshipStorageImpl(path)) {
+			long offset = st.create(-1, 40L, NODE_OFFSET);
+			assertEquals(st.header().size(), offset);
 		}
 	}
 
@@ -63,6 +66,8 @@ public class NodeRelationshipStorageTest extends AbstractElementStorageTest {
 	@Override
 	public void testDelete() throws Exception {
 		try (NodeRelationshipStorage st = new NodeRelationshipStorageImpl(path)) {
+			long offset = st.create(-1, 40L, NODE_OFFSET);
+			st.deleteByRelOffset(offset, 40L);
 		}
 	}
 
@@ -70,6 +75,9 @@ public class NodeRelationshipStorageTest extends AbstractElementStorageTest {
 	@Override
 	public void testRead() throws Exception {
 		try (NodeRelationshipStorage st = new NodeRelationshipStorageImpl(path)) {
+			long offset = st.create(-1, 40L, NODE_OFFSET);
+			List<RelationshipReferenceInternal> refs = st.load(offset);
+			assertEquals(1, refs.size());
 		}
 	}
 }

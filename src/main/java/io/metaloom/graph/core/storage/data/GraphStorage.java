@@ -9,15 +9,29 @@ import io.metaloom.graph.core.uuid.GraphUUID;
 
 public interface GraphStorage extends AutoCloseable {
 
+	/**
+	 * Store the relationship in the graph.
+	 * 
+	 * @param relationship
+	 * @return UUID of the created relationship.
+	 * @throws IOException
+	 */
 	GraphUUID create(Relationship relationship) throws IOException;
 
+	/**
+	 * Store the node in the graph.
+	 * 
+	 * @param node
+	 * @return UUID of the created node.
+	 * @throws IOException
+	 */
 	GraphUUID create(Node node) throws IOException;
 
 	/**
 	 * Load the relationship of the given uuid.
 	 * 
 	 * @param uuid
-	 * @return
+	 * @return Read relationship
 	 * @throws IOException
 	 */
 	Relationship readRelationship(GraphUUID uuid) throws IOException;

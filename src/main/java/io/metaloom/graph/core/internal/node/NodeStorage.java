@@ -11,4 +11,8 @@ public interface NodeStorage extends ElementStorage<NodeInternal> {
 
 	void update(GraphUUID uuid, String label, long propIds[]) throws IOException;
 
+	long getNodeRelOffset(GraphUUID uuid) throws IOException;
+
+	void setNodeRelOffset(GraphUUID uuid, long nodeRelOffset) throws IOException;
+
 }

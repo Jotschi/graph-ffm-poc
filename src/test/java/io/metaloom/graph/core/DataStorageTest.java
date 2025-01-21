@@ -24,18 +24,20 @@ public class DataStorageTest extends AbstractGraphCoreTest {
 
 	Path relsPath = Path.of("target", "rels.bin");
 	Path nodesPath = Path.of("target", "nodes.bin");
+	Path nodeRelPath = Path.of("target", "node_rels.bin");
 	Path propsPath = Path.of("target", "properties.bin");
 
 	@BeforeEach
 	public void setup() throws IOException {
 		Files.deleteIfExists(nodesPath);
 		Files.deleteIfExists(relsPath);
+		Files.deleteIfExists(nodeRelPath);
 		Files.deleteIfExists(propsPath);
 	}
 
 	@Test
 	public void testCreate() throws Exception {
-		try (InternalStorageImpl st = new InternalStorageImpl(nodesPath, relsPath, propsPath)) {
+		try (InternalStorageImpl st = new InternalStorageImpl(nodesPath, relsPath, nodeRelPath, propsPath)) {
 			measure(() -> {
 				for (int i = 0; i < 4; i++) {
 					System.out.println("Storing: " + i);
@@ -51,7 +53,7 @@ public class DataStorageTest extends AbstractGraphCoreTest {
 
 		Set<GraphUUID> uuids = new HashSet<>();
 
-		try (InternalStorage st = new InternalStorageImpl(nodesPath, relsPath, propsPath)) {
+		try (InternalStorage st = new InternalStorageImpl(nodesPath, relsPath, nodeRelPath, propsPath)) {
 			measure(() -> {
 				for (int i = 0; i < 4; i++) {
 					System.out.println("Storing: " + i);
@@ -70,18 +72,18 @@ public class DataStorageTest extends AbstractGraphCoreTest {
 				System.out.println("REL: " + uuid + "=>" + relData.fromId() + "," + relData.toId());
 			}
 
-//			st.rel().read(2);
-//			st.rel().delete(GraphUUID.uuid(2));
-//			st.rel().delete(GraphUUID.uuid(4));
-//			st.rel().read(2);
-//			assertEquals(2, st.rel().getFreeOffsets().size(), "There should be two free ids");
-//			st.rel().store(st.rel().nextOffset(), 20, 10, "Hello World1", null);
-//			st.rel().store(st.rel().nextOffset(), 20, 10, "Hello World2", null);
-//			assertEquals(0, st.rel().getFreeOffsets().size(), "There should be no free ids");
-//			st.rel().store(st.rel().nextOffset(), 20, 10, "Hello World3", null);
-//			assertEquals(0, st.rel().getFreeOffsets().size(), "There should be no free ids");
+			// st.rel().read(2);
+			// st.rel().delete(GraphUUID.uuid(2));
+			// st.rel().delete(GraphUUID.uuid(4));
+			// st.rel().read(2);
+			// assertEquals(2, st.rel().getFreeOffsets().size(), "There should be two free ids");
+			// st.rel().store(st.rel().nextOffset(), 20, 10, "Hello World1", null);
+			// st.rel().store(st.rel().nextOffset(), 20, 10, "Hello World2", null);
+			// assertEquals(0, st.rel().getFreeOffsets().size(), "There should be no free ids");
+			// st.rel().store(st.rel().nextOffset(), 20, 10, "Hello World3", null);
+			// assertEquals(0, st.rel().getFreeOffsets().size(), "There should be no free ids");
 		}
-		try (InternalStorageImpl st = new InternalStorageImpl(nodesPath, relsPath, propsPath)) {
+		try (InternalStorageImpl st = new InternalStorageImpl(nodesPath, relsPath, nodeRelPath, propsPath)) {
 			for (Long id : st.rel().offsetProvider().getFreeOffsets()) {
 				System.out.println("Free Id: " + id);
 			}
@@ -90,7 +92,7 @@ public class DataStorageTest extends AbstractGraphCoreTest {
 
 	@Test
 	public void testRelationshipProps() throws Exception {
-		try (InternalStorage st = new InternalStorageImpl(nodesPath, relsPath, propsPath)) {
+		try (InternalStorage st = new InternalStorageImpl(nodesPath, relsPath, nodeRelPath, propsPath)) {
 			GraphUUID nodeA = GraphUUID.uuid(0);
 			GraphUUID nodeB = GraphUUID.uuid(1);
 			RelationshipInternal data = st.rel().create(nodeA, "test", nodeB, new long[] { 1, 2, 3 });

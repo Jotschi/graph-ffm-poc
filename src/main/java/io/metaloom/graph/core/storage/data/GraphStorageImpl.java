@@ -11,6 +11,7 @@ import io.metaloom.graph.core.element.impl.NodeImpl;
 import io.metaloom.graph.core.element.impl.RelationshipImpl;
 import io.metaloom.graph.core.internal.InternalStorageImpl;
 import io.metaloom.graph.core.internal.node.NodeInternal;
+import io.metaloom.graph.core.internal.rel.NodeRelationshipStorage;
 import io.metaloom.graph.core.internal.rel.RelationshipInternal;
 import io.metaloom.graph.core.uuid.GraphUUID;
 
@@ -20,6 +21,8 @@ public class GraphStorageImpl implements GraphStorage {
 
 	private static final String RELS_FILENAME = "relationships.bin";
 
+	private static final String NODE_RELS_FILENAME = "node_rels.bin";
+
 	private static final String PROPS_FILENAME = "properties.bin";
 
 	private final InternalStorageImpl data;
@@ -27,8 +30,9 @@ public class GraphStorageImpl implements GraphStorage {
 	public GraphStorageImpl(Path basePath) throws IOException {
 		Path nodesPath = basePath.resolve(NODES_FILENAME);
 		Path relsPath = basePath.resolve(RELS_FILENAME);
+		Path nodeRelsPath = basePath.resolve(NODE_RELS_FILENAME);
 		Path propsPath = basePath.resolve(PROPS_FILENAME);
-		this.data = new InternalStorageImpl(nodesPath, relsPath, propsPath);
+		this.data = new InternalStorageImpl(nodesPath, relsPath, nodeRelsPath, propsPath);
 	}
 
 	@Override
@@ -99,28 +103,33 @@ public class GraphStorageImpl implements GraphStorage {
 
 	@Override
 	public GraphUUID create(Relationship rel) throws IOException {
-		// Node nodeA = rel.from();
-		// // Store Node A
-		// if (nodeA.uuid() == null) {
-		// long propIds[] = data.prop().store(nodeA.props());
-		// data.prop().store(nodeA.props());
-		// NodeInternal nodeData = data.node().create(nodeA.label(), propIds);
-		// nodeA.setUuid(nodeData.uuid());
-		// }
-		//
-		// // Store Node B
-		// Node nodeB = rel.to();
-		// if (nodeB.uuid() == null) {
-		// long propIds[] = data.prop().store(nodeB.props());
-		// NodeInternal nodeData = data.node().create(nodeB.label(), propIds);
-		// nodeB.setUuid(nodeData.uuid());
-		// }
+		Node nodeA = rel.from();
+		Node nodeB = rel.to();
+
+		// Store Node A
+		if (nodeA.uuid() == null) {
+			long propIds[] = data.prop().store(nodeA.props());
+			data.prop().store(nodeA.props());
+			NodeInternal nodeData = data.node().create(nodeA.label(), propIds);
+			nodeA.setUuid(nodeData.uuid());
+		}
+
+		// Store Node B
+		if (nodeB.uuid() == null) {
+			long propIds[] = data.prop().store(nodeB.props());
+			NodeInternal nodeData = data.node().create(nodeB.label(), propIds);
+			nodeB.setUuid(nodeData.uuid());
+		}
 
 		if (rel.uuid() == null) {
 			String label = rel.label();
 			long propIds[] = data.prop().store(rel.props());
 			RelationshipInternal relData = data.rel().create(rel.fromUuid(), label, rel.toUuid(), propIds);
 			rel.setUuid(relData.uuid());
+
+			long nodeRelStartOffset= data.node().getNodeRelOffset(nodeA.uuid());
+			long nodeRelOffset = data.nodeRel().create(nodeRelStartOffset, relData.uuid().offset(), nodeA.uuid().offset());
+			data.node().setNodeRelOffset(nodeA.uuid(), nodeRelOffset);
 		}
 
 		return rel.uuid();

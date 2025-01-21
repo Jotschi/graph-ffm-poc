@@ -117,6 +117,21 @@ public class GraphStorageTest extends AbstractGraphCoreTest {
 	}
 
 	@Test
+	public void testCreateRelationship() throws IOException, Exception {
+		try (GraphStorage st = new GraphStorageImpl(basePath)) {
+			Node nodeA = new NodeImpl("Person");
+			nodeA.set("name", "Wes Anderson");
+
+			Node nodeB = new NodeImpl("Vehicle");
+			nodeB.set("name", "VW Beetle");
+
+			Relationship rel = new RelationshipImpl(nodeA, "OWNS", nodeB);
+			rel.set("name", "relName");
+			st.create(rel);
+		}
+	}
+
+	@Test
 	public void testBulkNode() throws FileNotFoundException, Exception {
 
 		AtomicReference<GraphUUID> firstUuid = new AtomicReference<>();

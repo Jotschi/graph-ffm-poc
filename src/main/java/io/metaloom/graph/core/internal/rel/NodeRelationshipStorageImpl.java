@@ -32,8 +32,6 @@ public class NodeRelationshipStorageImpl extends AbstractMMapFileStorage impleme
 
 	private static final String NEXT_OFFSET_KEY = "next";
 
-	private static final long NO_NEXT_SEGMENT = -1;
-
 	private static final GroupLayout LAYOUT = MemoryLayout.structLayout(
 		ValueLayout.JAVA_LONG.withName(NODE_OFFSET_KEY),
 		ValueLayout.JAVA_LONG.withName(NEXT_OFFSET_KEY),
@@ -91,11 +89,6 @@ public class NodeRelationshipStorageImpl extends AbstractMMapFileStorage impleme
 			MemorySegment current = chainInfo.current();
 			long currentOffset = chainInfo.currentOffset();
 			long nextOffset = (long) LAYOUT.varHandle(MemoryLayout.PathElement.groupElement(NEXT_OFFSET_KEY)).get(current, 0);
-			if (nextOffset == NO_NEXT_SEGMENT) {
-				// The element with the record is the last in the chain. We don't need to update the next element
-			} else {
-				// MemorySegment next= fc.map(MapMode.READ_ONLY, nextOffset, LAYOUT.byteSize(), Arena.ofAuto());
-			}
 
 			// There is no next - we just set the next to -1 to indicate the prev is the only item in the chain
 			if (prev != null && nextOffset == NO_NEXT_SEGMENT) {
@@ -169,9 +162,14 @@ public class NodeRelationshipStorageImpl extends AbstractMMapFileStorage impleme
 	}
 
 	private long allocateSegment(FileChannel fc) throws IOException {
-		long count = elementCount.incrementAndGet();
+		long count = elementCount.getAndIncrement();
 		header.setCount(fc, count);
 		return header.size() + (count * LAYOUT.byteSize());
+	}
+
+	@Override
+	public FileHeader header() {
+		return header;
 	}
 
 }

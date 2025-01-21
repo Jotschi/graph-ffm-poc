@@ -32,8 +32,11 @@ public class RelationshipStorageImpl extends AbstractGraphStorage<RelationshipIn
 		MemoryLayout.sequenceLayout(MAX_LABEL_LEN, ValueLayout.JAVA_BYTE).withName("label"),
 		MemoryLayout.sequenceLayout(MAX_PROP_IDS, ValueLayout.JAVA_LONG).withName("props"));
 
-	public RelationshipStorageImpl(Path path) throws IOException {
+	private final NodeRelationshipStorage nodeRelStorage;
+
+	public RelationshipStorageImpl(Path path, NodeRelationshipStorage nodeRelStorage) throws IOException {
 		super(path, LAYOUT, "rels");
+		this.nodeRelStorage = nodeRelStorage;
 	}
 
 	@Override
@@ -99,7 +102,6 @@ public class RelationshipStorageImpl extends AbstractGraphStorage<RelationshipIn
 	public RelationshipInternal create(GraphUUID fromNodeUuid, String label, GraphUUID toNodeUuid, long propIds[]) throws IOException {
 		Objects.requireNonNull(fromNodeUuid, "The from node UUID must be specified.");
 		Objects.requireNonNull(toNodeUuid, "The to node UUID must be specified.");
-
 		// Map the memory segment
 		try (FileChannel fc = FileChannel.open(path, StandardOpenOption.READ, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
 			long offset = offsetProvider().next(fc);

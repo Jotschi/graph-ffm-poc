@@ -7,6 +7,8 @@ import io.metaloom.graph.core.internal.node.NodeStorage;
 import io.metaloom.graph.core.internal.node.NodeStorageImpl;
 import io.metaloom.graph.core.internal.prop.PropertyStorage;
 import io.metaloom.graph.core.internal.prop.PropertyStorageImpl;
+import io.metaloom.graph.core.internal.rel.NodeRelationshipStorage;
+import io.metaloom.graph.core.internal.rel.NodeRelationshipStorageImpl;
 import io.metaloom.graph.core.internal.rel.RelationshipStorage;
 import io.metaloom.graph.core.internal.rel.RelationshipStorageImpl;
 
@@ -18,9 +20,12 @@ public class InternalStorageImpl implements InternalStorage {
 
 	private final PropertyStorageImpl propertyStorage;
 
-	public InternalStorageImpl(Path nodesPath, Path relsPath, Path propsPath) throws IOException {
-		this.relationshipStorage = new RelationshipStorageImpl(relsPath);
+	private final NodeRelationshipStorageImpl nodeRelsStorage;
+
+	public InternalStorageImpl(Path nodesPath, Path relsPath, Path nodeRelsPath, Path propsPath) throws IOException {
 		this.nodesStorage = new NodeStorageImpl(nodesPath);
+		this.nodeRelsStorage = new NodeRelationshipStorageImpl(nodeRelsPath);
+		this.relationshipStorage = new RelationshipStorageImpl(relsPath, this.nodeRelsStorage);
 		this.propertyStorage = new PropertyStorageImpl(propsPath);
 	}
 
@@ -34,6 +39,11 @@ public class InternalStorageImpl implements InternalStorage {
 			nodesStorage.close();
 		} catch (Exception e) {
 			throw new RuntimeException("Failure while closing nodes storage", e);
+		}
+		try {
+			nodeRelsStorage.close();
+		} catch (Exception e) {
+			throw new RuntimeException("Failure while closing node rels storage", e);
 		}
 		try {
 			propertyStorage.close();
@@ -55,5 +65,10 @@ public class InternalStorageImpl implements InternalStorage {
 	@Override
 	public PropertyStorage prop() {
 		return propertyStorage;
+	}
+
+	@Override
+	public NodeRelationshipStorage nodeRel() {
+		return nodeRelsStorage;
 	}
 }
